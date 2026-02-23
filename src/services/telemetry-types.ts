@@ -41,8 +41,8 @@ export interface VariometerData {
 }
 
 export interface BatteryData {
-  voltage: number; // LSB = 10 µV
-  current: number; // LSB = 10 µA
+  voltage: number; // LSB = 100 mV
+  current: number; // LSB = 100 mA
   capacityUsed: number; // mAh
   remaining: number; // percent
 }

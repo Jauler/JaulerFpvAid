@@ -6,10 +6,10 @@ export function FlightModeOverlay({ mode }: Props) {
   return (
     <div
       style={{
-        padding: "4px 10px",
+        padding: "8px 12px",
         border: "1px solid var(--pico-muted-border-color)",
         borderRadius: "4px",
-        fontSize: "0.85rem",
+        fontSize: "1.1rem",
         lineHeight: 1,
       }}
     >

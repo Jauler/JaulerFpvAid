@@ -4,6 +4,7 @@ import type { TelemetryService } from "../services/TelemetryService";
 import { useService } from "../hooks/useService";
 import { StickOverlay } from "./StickOverlay";
 import { FlightModeOverlay } from "./FlightModeOverlay";
+import { BatteryOverlay } from "./BatteryOverlay";
 
 interface Props {
   rhState: RhState;
@@ -48,6 +49,7 @@ function elrsDotColor(status: ElrsState["status"]): string {
 export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
   const channelState = useService(telemetry.channels);
   const flightModeState = useService(telemetry.flightMode);
+  const batteryState = useService(telemetry.battery);
 
   return (
     <div class="container" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -78,12 +80,17 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
         </ul>
       </nav>
 
-      <div style={{ marginTop: "auto", paddingBottom: "1rem", display: "flex", alignItems: "flex-end" }}>
-        <div style={{ opacity: flightModeState.status === "stale" ? 0.4 : 1 }}>
-          <FlightModeOverlay mode={flightModeState.data?.mode || "---"} />
+      <div style={{ marginTop: "auto", paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
+        <div style={{ position: "absolute", left: 0, bottom: 0, display: "flex", gap: "4px", alignItems: "flex-end" }}>
+          <div style={{ opacity: flightModeState.status === "stale" ? 0.4 : 1 }}>
+            <FlightModeOverlay mode={flightModeState.data?.mode || "---"} />
+          </div>
+          <div style={{ opacity: batteryState.status === "stale" ? 0.4 : 1 }}>
+            <BatteryOverlay voltage={batteryState.data?.voltage ?? null} capacityUsed={batteryState.data?.capacityUsed ?? null} />
+          </div>
         </div>
         {channelState.status !== "inactive" && channelState.data && (
-          <div style={{ flex: 1, opacity: channelState.status === "stale" ? 0.4 : 1 }}>
+          <div style={{ opacity: channelState.status === "stale" ? 0.4 : 1 }}>
             <StickOverlay channels={channelState.data.channels} />
           </div>
         )}
