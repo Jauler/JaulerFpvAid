@@ -3,6 +3,7 @@ import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
 import { useService } from "../hooks/useService";
 import { StickOverlay } from "./StickOverlay";
+import { FlightModeOverlay } from "./FlightModeOverlay";
 
 interface Props {
   rhState: RhState;
@@ -46,6 +47,7 @@ function elrsDotColor(status: ElrsState["status"]): string {
 
 export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
   const channelState = useService(telemetry.channels);
+  const flightModeState = useService(telemetry.flightMode);
 
   return (
     <div class="container" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -76,11 +78,16 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
         </ul>
       </nav>
 
-      {channelState.status !== "inactive" && channelState.data && (
-        <div style={{ marginTop: "auto", paddingBottom: "1rem", opacity: channelState.status === "stale" ? 0.4 : 1 }}>
-          <StickOverlay channels={channelState.data.channels} />
+      <div style={{ marginTop: "auto", paddingBottom: "1rem", display: "flex", alignItems: "flex-end" }}>
+        <div style={{ opacity: flightModeState.status === "stale" ? 0.4 : 1 }}>
+          <FlightModeOverlay mode={flightModeState.data?.mode || "---"} />
         </div>
-      )}
+        {channelState.status !== "inactive" && channelState.data && (
+          <div style={{ flex: 1, opacity: channelState.status === "stale" ? 0.4 : 1 }}>
+            <StickOverlay channels={channelState.data.channels} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
