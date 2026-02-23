@@ -18,16 +18,16 @@ function Stick({ x, y }: { x: number; y: number }) {
       width={SIZE}
       height={SIZE}
       viewBox={`0 0 ${SIZE} ${SIZE}`}
-      style={{ border: "1px solid var(--pico-muted-border-color)", borderRadius: "4px" }}
+      style={{ border: "1px solid var(--pico-color)", borderRadius: "4px" }}
     >
       {/* crosshair */}
       <line
         x1={SIZE / 2} y1={PAD} x2={SIZE / 2} y2={SIZE - PAD}
-        stroke="var(--pico-muted-border-color)" stroke-width="1"
+        stroke="var(--pico-color)" stroke-width="1"
       />
       <line
         x1={PAD} y1={SIZE / 2} x2={SIZE - PAD} y2={SIZE / 2}
-        stroke="var(--pico-muted-border-color)" stroke-width="1"
+        stroke="var(--pico-color)" stroke-width="1"
       />
       {/* stick dot */}
       <circle cx={cx} cy={cy} r={DOT_R} fill="var(--pico-primary)" />

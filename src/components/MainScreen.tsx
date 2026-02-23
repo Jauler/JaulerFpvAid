@@ -73,7 +73,7 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
             </small>
           </li>
           <li>
-            <button class="secondary outline" onClick={onStop}>
+            <button class="outline" onClick={onStop}>
               Stop
             </button>
           </li>
@@ -82,15 +82,15 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
 
       <div style={{ marginTop: "auto", paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
         <div style={{ position: "absolute", left: 0, bottom: "1rem", display: "flex", gap: "4px", alignItems: "flex-end" }}>
-          <div style={{ opacity: flightModeState.status === "stale" ? 0.4 : 1 }}>
+          <div class={flightModeState.status !== "active" ? "stale-blink" : ""}>
             <FlightModeOverlay mode={flightModeState.data?.mode || "---"} />
           </div>
-          <div style={{ opacity: batteryState.status === "stale" ? 0.4 : 1 }}>
+          <div class={batteryState.status !== "active" ? "stale-blink" : ""}>
             <BatteryOverlay voltage={batteryState.data?.voltage ?? null} capacityUsed={batteryState.data?.capacityUsed ?? null} />
           </div>
         </div>
         {channelState.status !== "inactive" && channelState.data && (
-          <div style={{ opacity: channelState.status === "stale" ? 0.4 : 1 }}>
+          <div class={channelState.status !== "active" ? "stale-blink" : ""}>
             <StickOverlay channels={channelState.data.channels} />
           </div>
         )}

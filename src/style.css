@@ -3,3 +3,12 @@ main.container {
   max-width: 600px;
   padding-top: 2rem;
 }
+
+@keyframes blink-stale {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.15; }
+}
+
+.stale-blink {
+  animation: blink-stale 2s ease-in-out infinite;
+}
