@@ -1,0 +1,5 @@
+/* Minimal overrides — Pico.css handles base styling */
+main.container {
+  max-width: 600px;
+  padding-top: 2rem;
+}
