@@ -48,7 +48,7 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
   const channelState = useService(telemetry.channels);
 
   return (
-    <div class="container">
+    <div class="container" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <nav>
         <ul>
           <li>
@@ -77,7 +77,7 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
       </nav>
 
       {channelState.status !== "inactive" && channelState.data && (
-        <div style={{ opacity: channelState.status === "stale" ? 0.4 : 1 }}>
+        <div style={{ marginTop: "auto", paddingBottom: "1rem", opacity: channelState.status === "stale" ? 0.4 : 1 }}>
           <StickOverlay channels={channelState.data.channels} />
         </div>
       )}

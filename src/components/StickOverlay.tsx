@@ -1,6 +1,6 @@
-const SIZE = 150;
-const PAD = 10;
-const DOT_R = 6;
+const SIZE = 80;
+const PAD = 6;
+const DOT_R = 4;
 const RANGE_MIN = 988;
 const RANGE_MAX = 2012;
 
@@ -18,7 +18,7 @@ function Stick({ x, y }: { x: number; y: number }) {
       width={SIZE}
       height={SIZE}
       viewBox={`0 0 ${SIZE} ${SIZE}`}
-      style={{ border: "1px solid var(--pico-muted-border-color)", borderRadius: "8px" }}
+      style={{ border: "1px solid var(--pico-muted-border-color)", borderRadius: "4px" }}
     >
       {/* crosshair */}
       <line
@@ -47,7 +47,7 @@ export function StickOverlay({ channels }: Props) {
   const yaw = channels[3] ?? 1500;
 
   return (
-    <div style={{ display: "flex", gap: "24px", justifyContent: "center" }}>
+    <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
       <Stick x={yaw} y={throttle} />
       <Stick x={roll} y={pitch} />
     </div>
