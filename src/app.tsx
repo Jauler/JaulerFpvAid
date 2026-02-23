@@ -2,10 +2,12 @@ import { useMemo, useCallback, useState } from "preact/hooks";
 import { RotorhazardService, type RhConfig } from "./services/RotorhazardService";
 import { ElrsService } from "./services/ElrsService";
 import { TelemetryService } from "./services/TelemetryService";
+import { SettingsService, type Settings } from "./services/SettingsService";
 import { useService } from "./hooks/useService";
 import { RotorhazardConnect } from "./components/RotorhazardConnect";
 import { WebSerialConnect } from "./components/WebSerialConnect";
 import { MainScreen } from "./components/MainScreen";
+import { SettingsScreen } from "./components/SettingsScreen";
 
 const STORAGE_KEY = "rh-config";
 
@@ -31,11 +33,13 @@ export function App() {
   }, []);
   const elrs = useMemo(() => new ElrsService(), []);
   const telemetry = useMemo(() => new TelemetryService(), []);
+  const settingsService = useMemo(() => new SettingsService(), []);
 
-  const [screen, setScreen] = useState<"setup" | "main">("setup");
+  const [screen, setScreen] = useState<"setup" | "main" | "settings">("setup");
 
   const rhState = useService(rh);
   const elrsState = useService(elrs);
+  const settings = useService(settingsService);
 
   const handleConfigChange = useCallback(
     (partial: Partial<RhConfig>) => rh.updateConfig(partial),
@@ -61,6 +65,21 @@ export function App() {
     setScreen("setup");
   }, [telemetry]);
 
+  const handleSettingsChange = useCallback(
+    (partial: Partial<Settings>) => settingsService.update(partial),
+    [settingsService],
+  );
+
+  if (screen === "settings") {
+    return (
+      <SettingsScreen
+        settings={settings}
+        onSettingChange={handleSettingsChange}
+        onBack={() => setScreen("main")}
+      />
+    );
+  }
+
   if (screen === "main") {
     return (
       <MainScreen
@@ -68,6 +87,7 @@ export function App() {
         elrsState={elrsState}
         telemetry={telemetry}
         onStop={handleStop}
+        onOpenSettings={() => setScreen("settings")}
       />
     );
   }
