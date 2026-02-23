@@ -7,8 +7,28 @@ import { RotorhazardConnect } from "./components/RotorhazardConnect";
 import { WebSerialConnect } from "./components/WebSerialConnect";
 import { MainScreen } from "./components/MainScreen";
 
+const STORAGE_KEY = "rh-config";
+
+function loadSavedConfig(): Partial<RhConfig> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore corrupt data
+  }
+  return {};
+}
+
+function saveConfig(config: RhConfig): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+}
+
 export function App() {
-  const rh = useMemo(() => new RotorhazardService(), []);
+  const rh = useMemo(() => {
+    const service = new RotorhazardService();
+    service.updateConfig(loadSavedConfig());
+    return service;
+  }, []);
   const elrs = useMemo(() => new ElrsService(), []);
   const telemetry = useMemo(() => new TelemetryService(), []);
 
@@ -28,12 +48,13 @@ export function App() {
   const handleElrsDisconnect = useCallback(() => elrs.disconnect(), [elrs]);
 
   const handleStart = useCallback(() => {
+    saveConfig(rh.state.config);
     const readable = elrs.getReadable();
     if (readable) {
       telemetry.start(readable);
     }
     setScreen("main");
-  }, [elrs, telemetry]);
+  }, [rh, elrs, telemetry]);
 
   const handleStop = useCallback(() => {
     telemetry.stop();
