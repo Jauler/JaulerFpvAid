@@ -39,6 +39,8 @@ export function BatteryOverlay({ voltage, capacityUsed }: Props) {
         borderRadius: "4px",
         fontSize: "1.1rem",
         lineHeight: 1,
+        height: "100%",
+        boxSizing: "border-box",
       }}
     >
       <svg

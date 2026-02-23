@@ -1,9 +1,10 @@
-import { useMemo, useCallback, useState } from "preact/hooks";
+import { useMemo, useCallback, useState, useRef } from "preact/hooks";
 import { RotorhazardService, type RhConfig } from "./services/RotorhazardService";
 import { ElrsService } from "./services/ElrsService";
 import { TelemetryService } from "./services/TelemetryService";
 import { loadSettings, saveSettings, applyTheme, type Settings } from "./settings";
 import { useService, useServiceThrottled } from "./hooks/useService";
+import { ArmedProbe } from "./probes/ArmedProbe";
 import { RotorhazardConnect } from "./components/RotorhazardConnect";
 import { WebSerialConnect } from "./components/WebSerialConnect";
 import { MainScreen } from "./components/MainScreen";
@@ -39,6 +40,13 @@ export function App() {
     applyTheme(initial.theme);
     return initial;
   });
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
+  const armedProbe = useMemo(
+    () => new ArmedProbe(telemetry.channels, telemetry.flightMode, () => settingsRef.current),
+    [telemetry],
+  );
 
   const rhState = useService(rh);
   const elrsState = useService(elrs);
@@ -96,6 +104,7 @@ export function App() {
         rhState={rhState}
         elrsState={elrsState}
         telemetry={telemetry}
+        armedProbe={armedProbe}
         onStop={handleStop}
         onOpenSettings={() => setScreen("settings")}
       />

@@ -1,15 +1,17 @@
 import type { RhState } from "../services/RotorhazardService";
 import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
+import type { ArmedProbe } from "../probes/ArmedProbe";
 import { useService, useServiceThrottled } from "../hooks/useService";
 import { StickOverlay } from "./StickOverlay";
-import { FlightModeOverlay } from "./FlightModeOverlay";
 import { BatteryOverlay } from "./BatteryOverlay";
+import { DroneOverlay } from "./DroneOverlay";
 
 interface Props {
   rhState: RhState;
   elrsState: ElrsState;
   telemetry: TelemetryService;
+  armedProbe: ArmedProbe;
   onStop: () => void;
   onOpenSettings: () => void;
 }
@@ -47,10 +49,10 @@ function elrsDotColor(status: ElrsState["status"]): string {
   }
 }
 
-export function MainScreen({ rhState, elrsState, telemetry, onStop, onOpenSettings }: Props) {
+export function MainScreen({ rhState, elrsState, telemetry, armedProbe, onStop, onOpenSettings }: Props) {
   const channelState = useServiceThrottled(telemetry.channels);
-  const flightModeState = useService(telemetry.flightMode);
   const batteryState = useService(telemetry.battery);
+  const armState = useService(armedProbe);
 
   return (
     <div class="container" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -90,10 +92,8 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop, onOpenSettin
       </nav>
 
       <div style={{ marginTop: "auto", paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
-        <div style={{ position: "absolute", left: 0, bottom: "1rem", display: "flex", gap: "4px", alignItems: "flex-end" }}>
-          <div class={flightModeState.status !== "active" ? "stale-blink" : ""}>
-            <FlightModeOverlay mode={flightModeState.data?.mode || "---"} />
-          </div>
+        <div style={{ position: "absolute", left: 0, bottom: "1rem", display: "flex", gap: "4px", alignItems: "stretch" }}>
+          <DroneOverlay armState={armState} />
           <div class={batteryState.status !== "active" ? "stale-blink" : ""}>
             <BatteryOverlay voltage={batteryState.data?.voltage ?? null} capacityUsed={batteryState.data?.capacityUsed ?? null} />
           </div>
