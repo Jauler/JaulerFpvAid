@@ -40,6 +40,7 @@ export function App() {
   const rhState = useService(rh);
   const elrsState = useService(elrs);
   const settings = useService(settingsService);
+  const channelsState = useService(telemetry.channels);
 
   const handleConfigChange = useCallback(
     (partial: Partial<RhConfig>) => rh.updateConfig(partial),
@@ -74,6 +75,7 @@ export function App() {
     return (
       <SettingsScreen
         settings={settings}
+        channels={channelsState.data?.channels ?? null}
         onSettingChange={handleSettingsChange}
         onBack={() => setScreen("main")}
       />

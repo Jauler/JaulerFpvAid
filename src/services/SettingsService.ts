@@ -2,11 +2,25 @@ import { Subscribable } from "./Subscribable";
 
 export interface Settings {
   theme: "auto" | "dark" | "light";
+  armChannel: number;
+  armRangeMin: number;
+  armRangeMax: number;
+  turtleChannel: number;
+  turtleRangeMin: number;
+  turtleRangeMax: number;
 }
 
 const STORAGE_KEY = "settings";
 
-const defaults: Settings = { theme: "auto" };
+const defaults: Settings = {
+  theme: "auto",
+  armChannel: 4,
+  armRangeMin: 1500,
+  armRangeMax: 2012,
+  turtleChannel: 5,
+  turtleRangeMin: 1500,
+  turtleRangeMax: 2012,
+};
 
 function applyTheme(theme: Settings["theme"]): void {
   if (theme === "auto") {
