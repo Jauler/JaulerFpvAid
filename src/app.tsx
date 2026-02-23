@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useState } from "preact/hooks";
 import { RotorhazardService, type RhConfig } from "./services/RotorhazardService";
 import { ElrsService } from "./services/ElrsService";
+import { TelemetryService } from "./services/TelemetryService";
 import { useService } from "./hooks/useService";
 import { RotorhazardConnect } from "./components/RotorhazardConnect";
 import { WebSerialConnect } from "./components/WebSerialConnect";
@@ -9,6 +10,7 @@ import { MainScreen } from "./components/MainScreen";
 export function App() {
   const rh = useMemo(() => new RotorhazardService(), []);
   const elrs = useMemo(() => new ElrsService(), []);
+  const telemetry = useMemo(() => new TelemetryService(), []);
 
   const [screen, setScreen] = useState<"setup" | "main">("setup");
 
@@ -25,12 +27,26 @@ export function App() {
   const handleElrsConnect = useCallback(() => elrs.connect(), [elrs]);
   const handleElrsDisconnect = useCallback(() => elrs.disconnect(), [elrs]);
 
+  const handleStart = useCallback(() => {
+    const readable = elrs.getReadable();
+    if (readable) {
+      telemetry.start(readable);
+    }
+    setScreen("main");
+  }, [elrs, telemetry]);
+
+  const handleStop = useCallback(() => {
+    telemetry.stop();
+    setScreen("setup");
+  }, [telemetry]);
+
   if (screen === "main") {
     return (
       <MainScreen
         rhState={rhState}
         elrsState={elrsState}
-        onStop={() => setScreen("setup")}
+        telemetry={telemetry}
+        onStop={handleStop}
       />
     );
   }
@@ -54,7 +70,7 @@ export function App() {
 
       <button
         disabled={rhState.status !== "connected" || elrsState.status !== "connected"}
-        onClick={() => setScreen("main")}
+        onClick={handleStart}
       >
         Start
       </button>

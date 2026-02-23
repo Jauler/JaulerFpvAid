@@ -18,12 +18,16 @@ export class ElrsService extends Subscribable<ElrsState> {
   async connect(): Promise<void> {
     try {
       const port = await navigator.serial.requestPort();
-      await port.open({ baudRate: 400000 });
+      await port.open({ baudRate: 420000 });
       this.port = port;
       this.setState({ status: "connected" });
     } catch {
       // User cancelled or error — stay disconnected
     }
+  }
+
+  getReadable(): ReadableStream<Uint8Array> | null {
+    return this.port?.readable ?? null;
   }
 
   async disconnect(): Promise<void> {
