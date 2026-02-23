@@ -2,7 +2,7 @@ import { useMemo, useCallback, useState } from "preact/hooks";
 import { RotorhazardService, type RhConfig } from "./services/RotorhazardService";
 import { ElrsService } from "./services/ElrsService";
 import { TelemetryService } from "./services/TelemetryService";
-import { SettingsService, type Settings } from "./services/SettingsService";
+import { loadSettings, saveSettings, applyTheme, type Settings } from "./settings";
 import { useService } from "./hooks/useService";
 import { RotorhazardConnect } from "./components/RotorhazardConnect";
 import { WebSerialConnect } from "./components/WebSerialConnect";
@@ -33,13 +33,15 @@ export function App() {
   }, []);
   const elrs = useMemo(() => new ElrsService(), []);
   const telemetry = useMemo(() => new TelemetryService(), []);
-  const settingsService = useMemo(() => new SettingsService(), []);
-
   const [screen, setScreen] = useState<"setup" | "main" | "settings">("setup");
+  const [settings, setSettings] = useState(() => {
+    const initial = loadSettings();
+    applyTheme(initial.theme);
+    return initial;
+  });
 
   const rhState = useService(rh);
   const elrsState = useService(elrs);
-  const settings = useService(settingsService);
   const channelsState = useService(telemetry.channels);
 
   const handleConfigChange = useCallback(
@@ -67,8 +69,14 @@ export function App() {
   }, [telemetry]);
 
   const handleSettingsChange = useCallback(
-    (partial: Partial<Settings>) => settingsService.update(partial),
-    [settingsService],
+    (partial: Partial<Settings>) =>
+      setSettings((prev) => {
+        const next = { ...prev, ...partial };
+        saveSettings(next);
+        applyTheme(next.theme);
+        return next;
+      }),
+    [],
   );
 
   if (screen === "settings") {

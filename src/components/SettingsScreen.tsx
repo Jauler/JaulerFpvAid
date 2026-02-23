@@ -1,4 +1,4 @@
-import type { Settings } from "../services/SettingsService";
+import type { Settings } from "../settings";
 
 interface Props {
   settings: Settings;
