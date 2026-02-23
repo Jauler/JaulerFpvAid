@@ -1,7 +1,7 @@
 import type { RhState } from "../services/RotorhazardService";
 import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
-import { useService } from "../hooks/useService";
+import { useService, useServiceThrottled } from "../hooks/useService";
 import { StickOverlay } from "./StickOverlay";
 import { FlightModeOverlay } from "./FlightModeOverlay";
 import { BatteryOverlay } from "./BatteryOverlay";
@@ -48,7 +48,7 @@ function elrsDotColor(status: ElrsState["status"]): string {
 }
 
 export function MainScreen({ rhState, elrsState, telemetry, onStop, onOpenSettings }: Props) {
-  const channelState = useService(telemetry.channels);
+  const channelState = useServiceThrottled(telemetry.channels);
   const flightModeState = useService(telemetry.flightMode);
   const batteryState = useService(telemetry.battery);
 

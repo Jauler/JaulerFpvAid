@@ -3,7 +3,7 @@ import { RotorhazardService, type RhConfig } from "./services/RotorhazardService
 import { ElrsService } from "./services/ElrsService";
 import { TelemetryService } from "./services/TelemetryService";
 import { loadSettings, saveSettings, applyTheme, type Settings } from "./settings";
-import { useService } from "./hooks/useService";
+import { useService, useServiceThrottled } from "./hooks/useService";
 import { RotorhazardConnect } from "./components/RotorhazardConnect";
 import { WebSerialConnect } from "./components/WebSerialConnect";
 import { MainScreen } from "./components/MainScreen";
@@ -42,7 +42,7 @@ export function App() {
 
   const rhState = useService(rh);
   const elrsState = useService(elrs);
-  const channelsState = useService(telemetry.channels);
+  const channelsState = useServiceThrottled(telemetry.channels);
 
   const handleConfigChange = useCallback(
     (partial: Partial<RhConfig>) => rh.updateConfig(partial),
