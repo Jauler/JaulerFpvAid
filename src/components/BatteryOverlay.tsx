@@ -35,7 +35,7 @@ export function BatteryOverlay({ voltage, capacityUsed }: Props) {
         alignItems: "center",
         gap: "8px",
         padding: "8px 12px",
-        border: "1px solid var(--pico-color)",
+        border: "1px solid var(--pico-muted-color)",
         borderRadius: "4px",
         fontSize: "1.1rem",
         lineHeight: 1,
@@ -49,12 +49,12 @@ export function BatteryOverlay({ voltage, capacityUsed }: Props) {
         {/* battery body */}
         <rect
           x={0} y={0} width={W} height={H} rx={2} ry={2}
-          fill="none" stroke="var(--pico-color)" stroke-width={1.5}
+          fill="none" stroke="var(--pico-muted-color)" stroke-width={1.5}
         />
         {/* positive terminal tip */}
         <rect
           x={W} y={(H - TIP_H) / 2} width={TIP_W} height={TIP_H} rx={1} ry={1}
-          fill="var(--pico-color)"
+          fill="var(--pico-muted-color)"
         />
         {/* fill level */}
         {fillW > 0 && (
