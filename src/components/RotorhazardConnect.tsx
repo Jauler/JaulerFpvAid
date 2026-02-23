@@ -1,32 +1,28 @@
-import type { SocketStatus } from "../app";
+import type { RhState, RhConfig, RhConnectionStatus } from "../services/RotorhazardService";
 
 interface Props {
-  address: string;
-  onAddressChange: (address: string) => void;
-  username: string;
-  onUsernameChange: (username: string) => void;
-  password: string;
-  onPasswordChange: (password: string) => void;
-  status: SocketStatus;
+  state: RhState;
+  onConfigChange: (partial: Partial<RhConfig>) => void;
   onConnect: () => void;
   onDisconnect: () => void;
 }
 
-const statusLabel: Record<SocketStatus, string> = {
+const statusLabel: Record<RhConnectionStatus, string> = {
   disconnected: "Disconnected",
   connecting: "Connecting...",
   connected: "Connected",
   error: "Error",
 };
 
-const statusColor: Record<SocketStatus, string> = {
+const statusColor: Record<RhConnectionStatus, string> = {
   disconnected: "grey",
   connecting: "orange",
   connected: "green",
   error: "red",
 };
 
-export function RotorhazardConnect({ address, onAddressChange, username, onUsernameChange, password, onPasswordChange, status, onConnect, onDisconnect }: Props) {
+export function RotorhazardConnect({ state, onConfigChange, onConnect, onDisconnect }: Props) {
+  const { status, config } = state;
   const isConnected = status === "connected";
   const isBusy = status === "connecting";
   const fieldsDisabled = isConnected || isBusy;
@@ -37,8 +33,8 @@ export function RotorhazardConnect({ address, onAddressChange, username, onUsern
       <fieldset role="group">
         <input
           type="text"
-          value={address}
-          onInput={(e) => onAddressChange((e.target as HTMLInputElement).value)}
+          value={config.address}
+          onInput={(e) => onConfigChange({ address: (e.target as HTMLInputElement).value })}
           placeholder="http://192.168.1.100:5000"
           disabled={fieldsDisabled}
         />
@@ -47,7 +43,7 @@ export function RotorhazardConnect({ address, onAddressChange, username, onUsern
             Disconnect
           </button>
         ) : (
-          <button onClick={onConnect} disabled={isBusy || !address}>
+          <button onClick={onConnect} disabled={isBusy || !config.address}>
             {isBusy ? "Connecting..." : "Connect"}
           </button>
         )}
@@ -55,15 +51,15 @@ export function RotorhazardConnect({ address, onAddressChange, username, onUsern
       <fieldset role="group">
         <input
           type="text"
-          value={username}
-          onInput={(e) => onUsernameChange((e.target as HTMLInputElement).value)}
+          value={config.username}
+          onInput={(e) => onConfigChange({ username: (e.target as HTMLInputElement).value })}
           placeholder="Username"
           disabled={fieldsDisabled}
         />
         <input
           type="password"
-          value={password}
-          onInput={(e) => onPasswordChange((e.target as HTMLInputElement).value)}
+          value={config.password}
+          onInput={(e) => onConfigChange({ password: (e.target as HTMLInputElement).value })}
           placeholder="Password"
           disabled={fieldsDisabled}
         />

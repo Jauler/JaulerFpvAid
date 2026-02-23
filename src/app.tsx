@@ -1,91 +1,46 @@
-import { useState, useCallback, useRef } from "preact/hooks";
-import { io, Socket } from "socket.io-client";
+import { useMemo, useCallback } from "preact/hooks";
+import { RotorhazardService, type RhConfig } from "./services/RotorhazardService";
+import { ElrsService } from "./services/ElrsService";
+import { useService } from "./hooks/useService";
 import { RotorhazardConnect } from "./components/RotorhazardConnect";
 import { WebSerialConnect } from "./components/WebSerialConnect";
 
-export type SocketStatus = "disconnected" | "connecting" | "connected" | "error";
-export type SerialStatus = "disconnected" | "connected" | "unsupported";
-
 export function App() {
-  const [rhAddress, setRhAddress] = useState("http://192.168.1.100:5000");
-  const [rhUsername, setRhUsername] = useState("");
-  const [rhPassword, setRhPassword] = useState("");
-  const [socketStatus, setSocketStatus] = useState<SocketStatus>("disconnected");
-  const socketRef = useRef<Socket | null>(null);
+  const rh = useMemo(() => new RotorhazardService(), []);
+  const elrs = useMemo(() => new ElrsService(), []);
 
-  const [serialPort, setSerialPort] = useState<SerialPort | null>(null);
-  const [serialStatus, setSerialStatus] = useState<SerialStatus>(
-    "serial" in navigator ? "disconnected" : "unsupported"
+  const rhState = useService(rh);
+  const elrsState = useService(elrs);
+
+  const handleConfigChange = useCallback(
+    (partial: Partial<RhConfig>) => rh.updateConfig(partial),
+    [rh],
   );
+  const handleRhConnect = useCallback(() => rh.connect(), [rh]);
+  const handleRhDisconnect = useCallback(() => rh.disconnect(), [rh]);
 
-  const connectSocket = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-    }
-
-    setSocketStatus("connecting");
-    const s = io(rhAddress, {
-      transports: ["websocket"],
-      timeout: 5000,
-      auth: { username: rhUsername, password: rhPassword },
-    });
-
-    s.on("connect", () => setSocketStatus("connected"));
-    s.on("disconnect", () => setSocketStatus("disconnected"));
-    s.on("connect_error", () => setSocketStatus("error"));
-
-    socketRef.current = s;
-  }, [rhAddress, rhUsername, rhPassword]);
-
-  const disconnectSocket = useCallback(() => {
-    socketRef.current?.disconnect();
-    socketRef.current = null;
-    setSocketStatus("disconnected");
-  }, []);
-
-  const connectReceiver = useCallback(async () => {
-    try {
-      const port = await navigator.serial.requestPort();
-      await port.open({ baudRate: 400000 });
-      setSerialPort(port);
-      setSerialStatus("connected");
-    } catch {
-      // User cancelled or error — stay disconnected
-    }
-  }, []);
-
-  const disconnectReceiver = useCallback(async () => {
-    if (serialPort) {
-      await serialPort.close();
-      setSerialPort(null);
-      setSerialStatus("disconnected");
-    }
-  }, [serialPort]);
+  const handleElrsConnect = useCallback(() => elrs.connect(), [elrs]);
+  const handleElrsDisconnect = useCallback(() => elrs.disconnect(), [elrs]);
 
   return (
     <main class="container">
       <h1>Jauler's FPV Aid</h1>
 
       <RotorhazardConnect
-        address={rhAddress}
-        onAddressChange={setRhAddress}
-        username={rhUsername}
-        onUsernameChange={setRhUsername}
-        password={rhPassword}
-        onPasswordChange={setRhPassword}
-        status={socketStatus}
-        onConnect={connectSocket}
-        onDisconnect={disconnectSocket}
+        state={rhState}
+        onConfigChange={handleConfigChange}
+        onConnect={handleRhConnect}
+        onDisconnect={handleRhDisconnect}
       />
 
       <WebSerialConnect
-        status={serialStatus}
-        onConnect={connectReceiver}
-        onDisconnect={disconnectReceiver}
+        state={elrsState}
+        onConnect={handleElrsConnect}
+        onDisconnect={handleElrsDisconnect}
       />
 
       <button
-        disabled={socketStatus !== "connected" || serialStatus !== "connected"}
+        disabled={rhState.status !== "connected" || elrsState.status !== "connected"}
       >
         Start
       </button>

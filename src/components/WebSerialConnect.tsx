@@ -1,24 +1,26 @@
-import type { SerialStatus } from "../app";
+import type { ElrsState, ElrsConnectionStatus } from "../services/ElrsService";
 
 interface Props {
-  status: SerialStatus;
+  state: ElrsState;
   onConnect: () => void;
   onDisconnect: () => void;
 }
 
-const statusLabel: Record<SerialStatus, string> = {
+const statusLabel: Record<ElrsConnectionStatus, string> = {
   disconnected: "Disconnected",
   connected: "Connected",
   unsupported: "Not supported",
 };
 
-const statusColor: Record<SerialStatus, string> = {
+const statusColor: Record<ElrsConnectionStatus, string> = {
   disconnected: "grey",
   connected: "green",
   unsupported: "red",
 };
 
-export function WebSerialConnect({ status, onConnect, onDisconnect }: Props) {
+export function WebSerialConnect({ state, onConnect, onDisconnect }: Props) {
+  const { status } = state;
+
   if (status === "unsupported") {
     return (
       <article>
