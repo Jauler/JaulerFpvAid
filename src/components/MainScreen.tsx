@@ -81,7 +81,7 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
       </nav>
 
       <div style={{ marginTop: "auto", paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
-        <div style={{ position: "absolute", left: 0, bottom: 0, display: "flex", gap: "4px", alignItems: "flex-end" }}>
+        <div style={{ position: "absolute", left: 0, bottom: "1rem", display: "flex", gap: "4px", alignItems: "flex-end" }}>
           <div style={{ opacity: flightModeState.status === "stale" ? 0.4 : 1 }}>
             <FlightModeOverlay mode={flightModeState.data?.mode || "---"} />
           </div>
