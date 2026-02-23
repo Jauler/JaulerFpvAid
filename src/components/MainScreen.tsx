@@ -2,6 +2,7 @@ import type { RhState } from "../services/RotorhazardService";
 import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
 import { useService } from "../hooks/useService";
+import { StickOverlay } from "./StickOverlay";
 
 interface Props {
   rhState: RhState;
@@ -76,22 +77,8 @@ export function MainScreen({ rhState, elrsState, telemetry, onStop }: Props) {
       </nav>
 
       {channelState.status !== "inactive" && channelState.data && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "8px",
-            opacity: channelState.status === "stale" ? 0.4 : 1,
-          }}
-        >
-          {channelState.data.channels.map((value, i) => (
-            <div key={i} style={{ textAlign: "center" }}>
-              <small style={{ color: "var(--pico-muted-color)" }}>
-                CH{i + 1}
-              </small>
-              <div>{value}</div>
-            </div>
-          ))}
+        <div style={{ opacity: channelState.status === "stale" ? 0.4 : 1 }}>
+          <StickOverlay channels={channelState.data.channels} />
         </div>
       )}
     </div>
