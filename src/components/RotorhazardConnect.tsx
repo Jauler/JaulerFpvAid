@@ -11,6 +11,7 @@ const statusLabel: Record<RhConnectionStatus, string> = {
   disconnected: "Disconnected",
   connecting: "Connecting...",
   connected: "Connected",
+  reconnecting: "Reconnecting...",
   error: "Error",
 };
 
@@ -18,6 +19,7 @@ const statusColor: Record<RhConnectionStatus, string> = {
   disconnected: "grey",
   connecting: "orange",
   connected: "green",
+  reconnecting: "orange",
   error: "red",
 };
 

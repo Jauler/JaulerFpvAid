@@ -33,6 +33,7 @@ function rhDotColor(status: RhState["status"]): string {
     case "connected":
       return "green";
     case "connecting":
+    case "reconnecting":
       return "orange";
     case "error":
       return "red";

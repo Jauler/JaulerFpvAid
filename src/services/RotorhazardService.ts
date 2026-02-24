@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { Subscribable } from "./Subscribable";
 
-export type RhConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
+export type RhConnectionStatus = "disconnected" | "connecting" | "connected" | "reconnecting" | "error";
 
 export interface RhConfig {
   address: string;
@@ -43,12 +43,17 @@ export class RotorhazardService extends Subscribable<RhState> {
     const s = io(address, {
       transports: ["websocket"],
       timeout: 5000,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 120000,
       auth: { username, password },
     });
 
     s.on("connect", () => this.setState({ ...this.state, status: "connected" }));
     s.on("disconnect", () => this.setState({ ...this.state, status: "disconnected" }));
     s.on("connect_error", () => this.setState({ ...this.state, status: "error" }));
+
+    s.io.on("reconnect_attempt", () => this.setState({ ...this.state, status: "reconnecting" }));
+    s.io.on("reconnect", () => this.setState({ ...this.state, status: "connected" }));
 
     this.socket = s;
   }

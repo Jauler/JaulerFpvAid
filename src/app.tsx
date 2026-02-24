@@ -85,6 +85,7 @@ export function App() {
   const handleStart = useCallback(
     (sessionId: number) => {
       saveConfig(rh.state.config);
+      rh.connect();
       batteryTracker.resumeSession(sessionId);
       setSessionId(sessionId);
       setScreen("main");
