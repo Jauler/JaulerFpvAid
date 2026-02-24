@@ -1,8 +1,19 @@
+import type { RhState, RhConfig } from "../services/RotorhazardService";
+import type { ElrsState } from "../services/ElrsService";
+import { RotorhazardConnect } from "./RotorhazardConnect";
+import { WebSerialConnect } from "./WebSerialConnect";
 import type { Settings } from "../settings";
 
 interface Props {
   settings: Settings;
   channels: number[] | null;
+  rhState: RhState;
+  elrsState: ElrsState;
+  onRhConfigChange: (partial: Partial<RhConfig>) => void;
+  onRhConnect: () => void;
+  onRhDisconnect: () => void;
+  onElrsConnect: () => void;
+  onElrsDisconnect: () => void;
   onSettingChange: (partial: Partial<Settings>) => void;
   onBack: () => void;
 }
@@ -87,10 +98,35 @@ function ModeRangeSection({
   );
 }
 
-export function SettingsScreen({ settings, channels, onSettingChange, onBack }: Props) {
+export function SettingsScreen({
+  settings,
+  channels,
+  rhState,
+  elrsState,
+  onRhConfigChange,
+  onRhConnect,
+  onRhDisconnect,
+  onElrsConnect,
+  onElrsDisconnect,
+  onSettingChange,
+  onBack,
+}: Props) {
   return (
     <main class="container">
       <h1>Settings</h1>
+
+      <RotorhazardConnect
+        state={rhState}
+        onConfigChange={onRhConfigChange}
+        onConnect={onRhConnect}
+        onDisconnect={onRhDisconnect}
+      />
+
+      <WebSerialConnect
+        state={elrsState}
+        onConnect={onElrsConnect}
+        onDisconnect={onElrsDisconnect}
+      />
 
       <article>
         <header>Appearance</header>

@@ -404,6 +404,10 @@ export class TelemetryService {
     }
   }
 
+  isRunning(): boolean {
+    return this.reader !== null;
+  }
+
   stop(): void {
     if (this.reader) {
       this.reader.cancel();

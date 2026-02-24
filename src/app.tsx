@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useRef } from "preact/hooks";
+import { useMemo, useCallback, useState, useRef, useEffect } from "preact/hooks";
 import { RotorhazardService, type RhConfig } from "./services/RotorhazardService";
 import { ElrsService } from "./services/ElrsService";
 import { TelemetryService } from "./services/TelemetryService";
@@ -6,8 +6,6 @@ import { loadSettings, saveSettings, applyTheme, type Settings } from "./setting
 import { useService, useServiceThrottled } from "./hooks/useService";
 import { ArmedProbe } from "./probes/ArmedProbe";
 import { BatteryTracker } from "./trackers/BatteryTracker";
-import { RotorhazardConnect } from "./components/RotorhazardConnect";
-import { WebSerialConnect } from "./components/WebSerialConnect";
 import { MainScreen } from "./components/MainScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 
@@ -70,16 +68,25 @@ export function App() {
   const handleElrsConnect = useCallback(() => elrs.connect(), [elrs]);
   const handleElrsDisconnect = useCallback(() => elrs.disconnect(), [elrs]);
 
+  // Start/stop telemetry in response to ELRS connection changes.
+  // Only active once the user has left the setup screen.
+  useEffect(() => {
+    if (screen === "setup") return;
+
+    if (elrsState.status === "connected" && !telemetry.isRunning()) {
+      const readable = elrs.getReadable();
+      if (readable) telemetry.start(readable);
+    } else if (elrsState.status !== "connected" && telemetry.isRunning()) {
+      telemetry.stop();
+    }
+  }, [elrsState.status, screen, elrs, telemetry]);
+
   const handleStart = useCallback(async () => {
     saveConfig(rh.state.config);
-    const readable = elrs.getReadable();
-    if (readable) {
-      telemetry.start(readable);
-    }
     await batteryTracker.startSession();
     setSessionId(batteryTracker.getSessionId());
     setScreen("main");
-  }, [rh, elrs, telemetry, batteryTracker]);
+  }, [rh, batteryTracker]);
 
   const handleStop = useCallback(async () => {
     await batteryTracker.endSession();
@@ -104,6 +111,13 @@ export function App() {
       <SettingsScreen
         settings={settings}
         channels={channelsState.data?.channels ?? null}
+        rhState={rhState}
+        elrsState={elrsState}
+        onRhConfigChange={handleConfigChange}
+        onRhConnect={handleRhConnect}
+        onRhDisconnect={handleRhDisconnect}
+        onElrsConnect={handleElrsConnect}
+        onElrsDisconnect={handleElrsDisconnect}
         onSettingChange={handleSettingsChange}
         onBack={() => setScreen("main")}
       />
@@ -128,23 +142,7 @@ export function App() {
     <main class="container">
       <h1>Jauler's FPV Aid</h1>
 
-      <RotorhazardConnect
-        state={rhState}
-        onConfigChange={handleConfigChange}
-        onConnect={handleRhConnect}
-        onDisconnect={handleRhDisconnect}
-      />
-
-      <WebSerialConnect
-        state={elrsState}
-        onConnect={handleElrsConnect}
-        onDisconnect={handleElrsDisconnect}
-      />
-
-      <button
-        disabled={rhState.status !== "connected" || elrsState.status !== "connected"}
-        onClick={handleStart}
-      >
+      <button onClick={handleStart}>
         Start
       </button>
     </main>
