@@ -21,10 +21,17 @@ export interface BatterySample {
   samples: Array<{ t: number; voltage: number; amperage: number }>;
 }
 
+export interface CrashEvent {
+  id?: number;
+  flightId: number;
+  timestamp: Date;
+}
+
 class AppDatabase extends Dexie {
   sessions!: Table<Session>;
   flights!: Table<Flight>;
   batterySamples!: Table<BatterySample>;
+  crashEvents!: Table<CrashEvent>;
 
   constructor() {
     super("fpv-aid");
@@ -37,6 +44,12 @@ class AppDatabase extends Dexie {
       sessions: "++id",
       flights: "++id, sessionId",
       batterySamples: "++id, flightId",
+    });
+    this.version(3).stores({
+      sessions: "++id",
+      flights: "++id, sessionId",
+      batterySamples: "++id, flightId",
+      crashEvents: "++id, flightId",
     });
   }
 }

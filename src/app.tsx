@@ -7,9 +7,12 @@ import { useService, useServiceThrottled } from "./hooks/useService";
 import { ArmedProbe } from "./probes/ArmedProbe";
 import { FlightProbe } from "./probes/FlightProbe";
 import { BatteryTracker } from "./trackers/BatteryTracker";
+import { CrashTracker } from "./trackers/CrashTracker";
 import { MainScreen } from "./components/MainScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { SessionList } from "./components/SessionList";
+import { SessionReviewScreen } from "./components/SessionReviewScreen";
+import { FlightDetailScreen } from "./components/FlightDetailScreen";
 
 const STORAGE_KEY = "rh-config";
 
@@ -35,7 +38,7 @@ export function App() {
   }, []);
   const elrs = useMemo(() => new ElrsService(), []);
   const telemetry = useMemo(() => new TelemetryService(), []);
-  const [screen, setScreen] = useState<"setup" | "main" | "settings">("setup");
+  const [screen, setScreen] = useState<"setup" | "main" | "settings" | "review" | "flight-detail">("setup");
   const [settings, setSettings] = useState(() => {
     const initial = loadSettings();
     applyTheme(initial.theme);
@@ -59,7 +62,13 @@ export function App() {
     [armedProbe, telemetry],
   );
 
+  const crashTracker = useMemo(
+    () => new CrashTracker(flightProbe),
+    [flightProbe],
+  );
+
   const [sessionId, setSessionId] = useState<number | null>(null);
+  const [reviewFlightId, setReviewFlightId] = useState<number | null>(null);
 
   const rhState = useService(rh);
   const elrsState = useService(elrs);
@@ -94,18 +103,20 @@ export function App() {
       rh.connect();
       elrs.connect();
       batteryTracker.resumeSession(sessionId);
+      crashTracker.startSession(sessionId);
       setSessionId(sessionId);
       setScreen("main");
     },
-    [rh, elrs, batteryTracker],
+    [rh, elrs, batteryTracker, crashTracker],
   );
 
   const handleStop = useCallback(async () => {
+    crashTracker.endSession();
     await batteryTracker.endSession();
     setSessionId(null);
     telemetry.stop();
     setScreen("setup");
-  }, [telemetry, batteryTracker]);
+  }, [telemetry, batteryTracker, crashTracker]);
 
   const handleSettingsChange = useCallback(
     (partial: Partial<Settings>) =>
@@ -117,6 +128,32 @@ export function App() {
       }),
     [],
   );
+
+  if (screen === "flight-detail" && reviewFlightId != null) {
+    return (
+      <FlightDetailScreen
+        key={reviewFlightId}
+        flightId={reviewFlightId}
+        onBack={() => {
+          setReviewFlightId(null);
+          setScreen("review");
+        }}
+      />
+    );
+  }
+
+  if (screen === "review" && sessionId != null) {
+    return (
+      <SessionReviewScreen
+        sessionId={sessionId}
+        onBack={() => setScreen("main")}
+        onSelectFlight={(flightId) => {
+          setReviewFlightId(flightId);
+          setScreen("flight-detail");
+        }}
+      />
+    );
+  }
 
   if (screen === "settings") {
     return (
@@ -147,6 +184,7 @@ export function App() {
         sessionId={sessionId}
         onStop={handleStop}
         onOpenSettings={() => setScreen("settings")}
+        onOpenReview={() => setScreen("review")}
       />
     );
   }

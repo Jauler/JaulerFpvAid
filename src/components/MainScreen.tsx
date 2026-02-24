@@ -19,6 +19,7 @@ interface Props {
   sessionId: number | null;
   onStop: () => void;
   onOpenSettings: () => void;
+  onOpenReview: () => void;
 }
 
 const dotStyle = (color: string) => ({
@@ -198,7 +199,7 @@ function FlightPhaseBar({ current, flightCount }: { current: FlightState; flight
   );
 }
 
-export function MainScreen({ rhState, elrsState, telemetry, armedProbe, flightProbe, sessionId, onStop, onOpenSettings }: Props) {
+export function MainScreen({ rhState, elrsState, telemetry, armedProbe, flightProbe, sessionId, onStop, onOpenSettings, onOpenReview }: Props) {
   const channelState = useServiceThrottled(telemetry.channels);
   const batteryState = useService(telemetry.battery);
   const armState = useService(armedProbe);
@@ -233,6 +234,18 @@ export function MainScreen({ rhState, elrsState, telemetry, armedProbe, flightPr
               <span style={dotStyle(elrsDotColor(elrsState.status))} />
               ELRS
             </small>
+          </li>
+          <li>
+            <button class="outline" style={{ color: "var(--pico-muted-color)", borderColor: "var(--pico-muted-color)" }} onClick={onOpenReview} aria-label="Review">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+            </button>
           </li>
           <li>
             <button class="outline" style={{ color: "var(--pico-muted-color)", borderColor: "var(--pico-muted-color)" }} onClick={onOpenSettings} aria-label="Settings">

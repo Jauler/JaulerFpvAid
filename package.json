@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@picocss/pico": "^2.1.1",
+    "chart.js": "^4.5.1",
     "crsf": "^0.0.2",
     "dexie": "^4.3.0",
     "preact": "^10.25.4",
