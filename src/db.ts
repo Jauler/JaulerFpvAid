@@ -21,6 +21,13 @@ export interface BatterySample {
   samples: Array<{ t: number; voltage: number; amperage: number }>;
 }
 
+export interface StickSample {
+  id?: number;
+  flightId: number;
+  startTime: number;
+  samples: Array<{ t: number; roll: number; pitch: number; throttle: number; yaw: number }>;
+}
+
 export interface CrashEvent {
   id?: number;
   flightId: number;
@@ -31,6 +38,7 @@ class AppDatabase extends Dexie {
   sessions!: Table<Session>;
   flights!: Table<Flight>;
   batterySamples!: Table<BatterySample>;
+  stickSamples!: Table<StickSample>;
   crashEvents!: Table<CrashEvent>;
 
   constructor() {
@@ -49,6 +57,13 @@ class AppDatabase extends Dexie {
       sessions: "++id",
       flights: "++id, sessionId",
       batterySamples: "++id, flightId",
+      crashEvents: "++id, flightId",
+    });
+    this.version(4).stores({
+      sessions: "++id",
+      flights: "++id, sessionId",
+      batterySamples: "++id, flightId",
+      stickSamples: "++id, flightId",
       crashEvents: "++id, flightId",
     });
   }

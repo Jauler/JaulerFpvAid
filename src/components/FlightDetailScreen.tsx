@@ -1,6 +1,7 @@
 import { useLiveQuery } from "../hooks/useLiveQuery";
-import { db, type Flight, type BatterySample, type CrashEvent } from "../db";
+import { db, type Flight, type BatterySample, type CrashEvent, type StickSample } from "../db";
 import { BatteryChart } from "./BatteryChart";
+import { StickHeatmap } from "./StickHeatmap";
 import { formatTime, formatDuration } from "../utils/format";
 
 interface Props {
@@ -17,6 +18,12 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
 
   const batterySamples = useLiveQuery<BatterySample[]>(
     () => db.batterySamples.where("flightId").equals(flightId).toArray(),
+    [flightId],
+    [],
+  );
+
+  const stickSamples = useLiveQuery<StickSample[]>(
+    () => db.stickSamples.where("flightId").equals(flightId).toArray(),
     [flightId],
     [],
   );
@@ -73,11 +80,21 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
         </article>
       </div>
 
-      {batterySamples.length > 0 && (
-        <article>
-          <header>Battery</header>
-          <BatteryChart samples={batterySamples} />
-        </article>
+      {(batterySamples.length > 0 || stickSamples.length > 0) && (
+        <div style={{ display: "flex", gap: "1rem", alignItems: "stretch" }}>
+          {batterySamples.length > 0 && (
+            <article style={{ flex: 1, minWidth: 0 }}>
+              <header>Battery</header>
+              <BatteryChart samples={batterySamples} />
+            </article>
+          )}
+          {stickSamples.length > 0 && (
+            <article style={{ flexShrink: 0 }}>
+              <header>Stick Heatmap</header>
+              <StickHeatmap stickSamples={stickSamples} />
+            </article>
+          )}
+        </div>
       )}
 
       {crashEvents.length > 0 && (

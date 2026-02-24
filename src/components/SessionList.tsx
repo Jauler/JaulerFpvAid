@@ -46,9 +46,10 @@ export function SessionList({ onStart }: Props) {
       .equals(session.id!)
       .primaryKeys();
 
-    await db.transaction("rw", [db.sessions, db.flights, db.batterySamples, db.crashEvents], async () => {
+    await db.transaction("rw", [db.sessions, db.flights, db.batterySamples, db.stickSamples, db.crashEvents], async () => {
       for (const fid of flightIds) {
         await db.batterySamples.where("flightId").equals(fid).delete();
+        await db.stickSamples.where("flightId").equals(fid).delete();
         await db.crashEvents.where("flightId").equals(fid).delete();
       }
       await db.flights.where("sessionId").equals(session.id!).delete();
