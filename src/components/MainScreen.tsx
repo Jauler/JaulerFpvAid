@@ -106,17 +106,33 @@ export function MainScreen({ rhState, elrsState, telemetry, armedProbe, sessionI
         </ul>
       </nav>
 
+      <div style={{ padding: "1rem 0" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "5rem",
+            height: "5rem",
+            border: "1px solid var(--pico-muted-color)",
+            borderRadius: "8px",
+            lineHeight: 1,
+          }}
+        >
+          <strong style={{ fontSize: "2rem" }}>{flightCount}</strong>
+          <span style={{ fontSize: "0.75rem", marginTop: "4px", color: "var(--pico-muted-color)" }}>
+            {flightCount === 1 ? "flight" : "flights"}
+          </span>
+        </div>
+      </div>
+
       <div style={{ marginTop: "auto", paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
         <div style={{ position: "absolute", left: 0, bottom: "1rem", display: "flex", gap: "4px", alignItems: "stretch" }}>
           <DroneOverlay armState={armState} />
           <div class={batteryState.status !== "active" ? "stale-blink" : ""}>
             <BatteryOverlay voltage={batteryState.data?.voltage ?? null} capacityUsed={batteryState.data?.capacityUsed ?? null} />
           </div>
-          {flightCount > 0 && (
-            <div style={{ display: "flex", alignItems: "center", padding: "0 6px", fontSize: "0.85rem", opacity: 0.8 }}>
-              {flightCount} {flightCount === 1 ? "flight" : "flights"}
-            </div>
-          )}
         </div>
         {channelState.status !== "inactive" && channelState.data && (
           <div class={channelState.status !== "active" ? "stale-blink" : ""}>
