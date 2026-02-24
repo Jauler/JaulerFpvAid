@@ -9,12 +9,14 @@ interface Props {
 const statusLabel: Record<ElrsConnectionStatus, string> = {
   disconnected: "Disconnected",
   connected: "Connected",
+  lost: "Device lost",
   unsupported: "Not supported",
 };
 
 const statusColor: Record<ElrsConnectionStatus, string> = {
   disconnected: "grey",
   connected: "green",
+  lost: "orange",
   unsupported: "red",
 };
 

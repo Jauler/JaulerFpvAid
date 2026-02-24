@@ -86,11 +86,12 @@ export function App() {
     (sessionId: number) => {
       saveConfig(rh.state.config);
       rh.connect();
+      elrs.connect();
       batteryTracker.resumeSession(sessionId);
       setSessionId(sessionId);
       setScreen("main");
     },
-    [rh, batteryTracker],
+    [rh, elrs, batteryTracker],
   );
 
   const handleStop = useCallback(async () => {

@@ -410,7 +410,7 @@ export class TelemetryService {
 
   stop(): void {
     if (this.reader) {
-      this.reader.cancel();
+      this.reader.cancel().catch(() => {});
       this.reader = null;
     }
     this.stopStaleTimer();

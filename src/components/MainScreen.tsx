@@ -46,6 +46,8 @@ function elrsDotColor(status: ElrsState["status"]): string {
   switch (status) {
     case "connected":
       return "green";
+    case "lost":
+      return "orange";
     case "unsupported":
       return "red";
     default:
