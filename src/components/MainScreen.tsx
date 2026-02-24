@@ -3,6 +3,8 @@ import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
 import type { ArmedProbe } from "../probes/ArmedProbe";
 import { useService, useServiceThrottled } from "../hooks/useService";
+import { useLiveQuery } from "../hooks/useLiveQuery";
+import { db } from "../db";
 import { StickOverlay } from "./StickOverlay";
 import { BatteryOverlay } from "./BatteryOverlay";
 import { DroneOverlay } from "./DroneOverlay";
@@ -12,6 +14,7 @@ interface Props {
   elrsState: ElrsState;
   telemetry: TelemetryService;
   armedProbe: ArmedProbe;
+  sessionId: number | null;
   onStop: () => void;
   onOpenSettings: () => void;
 }
@@ -49,10 +52,19 @@ function elrsDotColor(status: ElrsState["status"]): string {
   }
 }
 
-export function MainScreen({ rhState, elrsState, telemetry, armedProbe, onStop, onOpenSettings }: Props) {
+export function MainScreen({ rhState, elrsState, telemetry, armedProbe, sessionId, onStop, onOpenSettings }: Props) {
   const channelState = useServiceThrottled(telemetry.channels);
   const batteryState = useService(telemetry.battery);
   const armState = useService(armedProbe);
+
+  const flightCount = useLiveQuery(
+    () =>
+      sessionId != null
+        ? db.flights.where("sessionId").equals(sessionId).count()
+        : Promise.resolve(0),
+    [sessionId],
+    0,
+  );
 
   return (
     <div class="container" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -97,6 +109,11 @@ export function MainScreen({ rhState, elrsState, telemetry, armedProbe, onStop, 
           <div class={batteryState.status !== "active" ? "stale-blink" : ""}>
             <BatteryOverlay voltage={batteryState.data?.voltage ?? null} capacityUsed={batteryState.data?.capacityUsed ?? null} />
           </div>
+          {flightCount > 0 && (
+            <div style={{ display: "flex", alignItems: "center", padding: "0 6px", fontSize: "0.85rem", opacity: 0.8 }}>
+              {flightCount} {flightCount === 1 ? "flight" : "flights"}
+            </div>
+          )}
         </div>
         {channelState.status !== "inactive" && channelState.data && (
           <div class={channelState.status !== "active" ? "stale-blink" : ""}>

@@ -5,6 +5,7 @@ import { TelemetryService } from "./services/TelemetryService";
 import { loadSettings, saveSettings, applyTheme, type Settings } from "./settings";
 import { useService, useServiceThrottled } from "./hooks/useService";
 import { ArmedProbe } from "./probes/ArmedProbe";
+import { BatteryTracker } from "./trackers/BatteryTracker";
 import { RotorhazardConnect } from "./components/RotorhazardConnect";
 import { WebSerialConnect } from "./components/WebSerialConnect";
 import { MainScreen } from "./components/MainScreen";
@@ -48,6 +49,13 @@ export function App() {
     [telemetry],
   );
 
+  const batteryTracker = useMemo(
+    () => new BatteryTracker(armedProbe, telemetry.battery),
+    [armedProbe, telemetry],
+  );
+
+  const [sessionId, setSessionId] = useState<number | null>(null);
+
   const rhState = useService(rh);
   const elrsState = useService(elrs);
   const channelsState = useServiceThrottled(telemetry.channels);
@@ -62,19 +70,23 @@ export function App() {
   const handleElrsConnect = useCallback(() => elrs.connect(), [elrs]);
   const handleElrsDisconnect = useCallback(() => elrs.disconnect(), [elrs]);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
     saveConfig(rh.state.config);
     const readable = elrs.getReadable();
     if (readable) {
       telemetry.start(readable);
     }
+    await batteryTracker.startSession();
+    setSessionId(batteryTracker.getSessionId());
     setScreen("main");
-  }, [rh, elrs, telemetry]);
+  }, [rh, elrs, telemetry, batteryTracker]);
 
-  const handleStop = useCallback(() => {
+  const handleStop = useCallback(async () => {
+    await batteryTracker.endSession();
+    setSessionId(null);
     telemetry.stop();
     setScreen("setup");
-  }, [telemetry]);
+  }, [telemetry, batteryTracker]);
 
   const handleSettingsChange = useCallback(
     (partial: Partial<Settings>) =>
@@ -105,6 +117,7 @@ export function App() {
         elrsState={elrsState}
         telemetry={telemetry}
         armedProbe={armedProbe}
+        sessionId={sessionId}
         onStop={handleStop}
         onOpenSettings={() => setScreen("settings")}
       />

@@ -1,0 +1,38 @@
+import Dexie, { type Table } from "dexie";
+
+export interface Session {
+  id?: number;
+  startedAt: Date;
+  endedAt: Date | null;
+}
+
+export interface Flight {
+  id?: number;
+  sessionId: number;
+  startedAt: Date;
+  endedAt: Date | null;
+}
+
+export interface BatterySample {
+  id?: number;
+  flightId: number;
+  startTime: number;
+  samples: Array<{ t: number; voltage: number; amperage: number }>;
+}
+
+class AppDatabase extends Dexie {
+  sessions!: Table<Session>;
+  flights!: Table<Flight>;
+  batterySamples!: Table<BatterySample>;
+
+  constructor() {
+    super("fpv-aid");
+    this.version(1).stores({
+      sessions: "++id",
+      flights: "++id, sessionId",
+      batterySamples: "++id, flightId",
+    });
+  }
+}
+
+export const db = new AppDatabase();
