@@ -2,6 +2,7 @@ import Dexie, { type Table } from "dexie";
 
 export interface Session {
   id?: number;
+  name?: string;
   startedAt: Date;
   endedAt: Date | null;
 }
@@ -28,6 +29,11 @@ class AppDatabase extends Dexie {
   constructor() {
     super("fpv-aid");
     this.version(1).stores({
+      sessions: "++id",
+      flights: "++id, sessionId",
+      batterySamples: "++id, flightId",
+    });
+    this.version(2).stores({
       sessions: "++id",
       flights: "++id, sessionId",
       batterySamples: "++id, flightId",

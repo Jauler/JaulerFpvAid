@@ -30,6 +30,12 @@ export class BatteryTracker {
     this.subscribe();
   }
 
+  resumeSession(id: number): void {
+    this.sessionId = id;
+    this.recording = false;
+    this.subscribe();
+  }
+
   async endSession(): Promise<void> {
     this.unsubscribe();
     if (this.recording) {

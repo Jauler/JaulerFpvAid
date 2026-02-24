@@ -8,6 +8,7 @@ import { ArmedProbe } from "./probes/ArmedProbe";
 import { BatteryTracker } from "./trackers/BatteryTracker";
 import { MainScreen } from "./components/MainScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
+import { SessionList } from "./components/SessionList";
 
 const STORAGE_KEY = "rh-config";
 
@@ -81,12 +82,15 @@ export function App() {
     }
   }, [elrsState.status, screen, elrs, telemetry]);
 
-  const handleStart = useCallback(async () => {
-    saveConfig(rh.state.config);
-    await batteryTracker.startSession();
-    setSessionId(batteryTracker.getSessionId());
-    setScreen("main");
-  }, [rh, batteryTracker]);
+  const handleStart = useCallback(
+    (sessionId: number) => {
+      saveConfig(rh.state.config);
+      batteryTracker.resumeSession(sessionId);
+      setSessionId(sessionId);
+      setScreen("main");
+    },
+    [rh, batteryTracker],
+  );
 
   const handleStop = useCallback(async () => {
     await batteryTracker.endSession();
@@ -139,12 +143,9 @@ export function App() {
   }
 
   return (
-    <main class="container">
+    <main class="container" style={{ maxWidth: "75vw" }}>
       <h1>Jauler's FPV Aid</h1>
-
-      <button onClick={handleStart}>
-        Start
-      </button>
+      <SessionList onStart={handleStart} />
     </main>
   );
 }
