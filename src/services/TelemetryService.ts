@@ -56,7 +56,7 @@ import type {
 } from "./telemetry-types";
 
 const STALE_CHECK_INTERVAL = 2000;
-const STALE_THRESHOLD = 3000;
+const STALE_THRESHOLD = 5000;
 
 export class TelemetryService {
   readonly gps = new SensorService<GpsData>();
