@@ -6,6 +6,7 @@ export interface Settings {
   turtleChannel: number;
   turtleRangeMin: number;
   turtleRangeMax: number;
+  crashThrottlePct: number;
 }
 
 const STORAGE_KEY = "settings";
@@ -18,6 +19,7 @@ const defaults: Settings = {
   turtleChannel: 5,
   turtleRangeMin: 1500,
   turtleRangeMax: 2012,
+  crashThrottlePct: 25,
 };
 
 export function applyTheme(theme: Settings["theme"]): void {

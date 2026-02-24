@@ -156,6 +156,27 @@ export function SettingsScreen({
         onRangeMaxChange={(v) => onSettingChange({ armRangeMax: v })}
       />
 
+      <article>
+        <header>Crash Detection</header>
+        <label>
+          Throttle threshold (%)
+          <input
+            key={settings.crashThrottlePct}
+            type="number"
+            min={0}
+            max={100}
+            defaultValue={settings.crashThrottlePct}
+            onBlur={(e) => {
+              const v = Number((e.target as HTMLInputElement).value);
+              if (!Number.isNaN(v)) onSettingChange({ crashThrottlePct: v });
+            }}
+          />
+        </label>
+        <small>
+          Throttle must exceed this percentage to transition from armed to flying.
+        </small>
+      </article>
+
       <ModeRangeSection
         title="Turtle Mode"
         channel={settings.turtleChannel}

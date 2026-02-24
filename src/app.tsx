@@ -5,6 +5,7 @@ import { TelemetryService } from "./services/TelemetryService";
 import { loadSettings, saveSettings, applyTheme, type Settings } from "./settings";
 import { useService, useServiceThrottled } from "./hooks/useService";
 import { ArmedProbe } from "./probes/ArmedProbe";
+import { FlightProbe } from "./probes/FlightProbe";
 import { BatteryTracker } from "./trackers/BatteryTracker";
 import { MainScreen } from "./components/MainScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
@@ -46,6 +47,11 @@ export function App() {
   const armedProbe = useMemo(
     () => new ArmedProbe(telemetry.channels, telemetry.flightMode, () => settingsRef.current),
     [telemetry],
+  );
+
+  const flightProbe = useMemo(
+    () => new FlightProbe(armedProbe, telemetry.channels, () => settingsRef.current),
+    [armedProbe, telemetry],
   );
 
   const batteryTracker = useMemo(
@@ -137,6 +143,7 @@ export function App() {
         elrsState={elrsState}
         telemetry={telemetry}
         armedProbe={armedProbe}
+        flightProbe={flightProbe}
         sessionId={sessionId}
         onStop={handleStop}
         onOpenSettings={() => setScreen("settings")}

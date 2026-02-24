@@ -2,6 +2,7 @@ import type { RhState } from "../services/RotorhazardService";
 import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
 import type { ArmedProbe } from "../probes/ArmedProbe";
+import type { FlightProbe, FlightState } from "../probes/FlightProbe";
 import { useService, useServiceThrottled } from "../hooks/useService";
 import { useLiveQuery } from "../hooks/useLiveQuery";
 import { db } from "../db";
@@ -14,6 +15,7 @@ interface Props {
   elrsState: ElrsState;
   telemetry: TelemetryService;
   armedProbe: ArmedProbe;
+  flightProbe: FlightProbe;
   sessionId: number | null;
   onStop: () => void;
   onOpenSettings: () => void;
@@ -55,10 +57,152 @@ function elrsDotColor(status: ElrsState["status"]): string {
   }
 }
 
-export function MainScreen({ rhState, elrsState, telemetry, armedProbe, sessionId, onStop, onOpenSettings }: Props) {
+const MAIN_PHASES: FlightState[] = ["off", "prepare", "flying", "landed"];
+
+function phaseColor(phase: FlightState, active: boolean): string {
+  if (!active) return "var(--pico-muted-color)";
+  switch (phase) {
+    case "off": return "var(--pico-muted-color)";
+    case "prepare": return "var(--pico-primary)";
+    case "flying": return "green";
+    case "landed": return "var(--pico-primary)";
+    case "crashed": return "red";
+  }
+}
+
+function PhaseNode({ phase, active }: { phase: FlightState; active: boolean }) {
+  const color = phaseColor(phase, active);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+      <div
+        style={{
+          width: active ? "14px" : "10px",
+          height: active ? "14px" : "10px",
+          borderRadius: "50%",
+          backgroundColor: active ? color : "transparent",
+          border: `2px solid ${color}`,
+          transition: "all 0.2s ease",
+          boxShadow: active ? `0 0 8px ${color}` : undefined,
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          top: "100%",
+          marginTop: "4px",
+          fontSize: "0.6rem",
+          color,
+          fontWeight: active ? "bold" : "normal",
+          textTransform: "uppercase",
+          letterSpacing: "0.03em",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {phase}
+      </span>
+    </div>
+  );
+}
+
+function FlightPhaseBar({ current, flightCount }: { current: FlightState; flightCount: number }) {
+  const activeIdx = MAIN_PHASES.indexOf(current); // -1 when crashed
+  const crashed = current === "crashed";
+  const crashColor = phaseColor("crashed", crashed);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "stretch",
+        gap: "1.25rem",
+        padding: "0.75rem 1rem",
+        border: "1px solid var(--pico-muted-color)",
+        borderRadius: "8px",
+        width: "100%",
+      }}
+    >
+      {/* Phase pipeline */}
+      <div style={{ flex: 1, display: "flex", alignItems: "flex-start", paddingTop: "0.5rem", paddingBottom: "0.5rem", minHeight: "4.5rem", gap: 0 }}>
+        {MAIN_PHASES.map((phase, i) => {
+          const active = i === activeIdx;
+          // "flying" node: position: relative for the crash branch
+          const isFlyingNode = phase === "flying";
+          return (
+            <div key={phase} style={{ display: "flex", alignItems: "center", flex: i < MAIN_PHASES.length - 1 ? 1 : undefined }}>
+              <div style={isFlyingNode ? { position: "relative" } : undefined}>
+                <PhaseNode phase={phase} active={active} />
+                {/* Crash branch: vertical line + node below the "flying" node */}
+                {isFlyingNode && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      marginTop: "14px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "2px",
+                        height: "20px",
+                        backgroundColor: crashColor,
+                        opacity: crashed ? 0.5 : 0.25,
+                        transition: "background-color 0.2s ease",
+                      }}
+                    />
+                    <PhaseNode phase="crashed" active={crashed} />
+                  </div>
+                )}
+              </div>
+              {/* Connector line */}
+              {i < MAIN_PHASES.length - 1 && (
+                <div
+                  style={{
+                    flex: 1,
+                    height: "2px",
+                    backgroundColor: i < activeIdx ? phaseColor(MAIN_PHASES[i + 1], true) : "var(--pico-muted-color)",
+                    opacity: i < activeIdx ? 0.5 : 0.25,
+                    transition: "background-color 0.2s ease",
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Flight count */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          alignSelf: "stretch",
+          minWidth: "3.5rem",
+          lineHeight: 1,
+          borderLeft: "1px solid var(--pico-muted-color)",
+          paddingLeft: "0.75rem",
+        }}
+      >
+        <strong style={{ fontSize: "1.5rem" }}>{flightCount}</strong>
+        <span style={{ fontSize: "0.65rem", marginTop: "2px", color: "var(--pico-muted-color)" }}>
+          {flightCount === 1 ? "flight" : "flights"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function MainScreen({ rhState, elrsState, telemetry, armedProbe, flightProbe, sessionId, onStop, onOpenSettings }: Props) {
   const channelState = useServiceThrottled(telemetry.channels);
   const batteryState = useService(telemetry.battery);
   const armState = useService(armedProbe);
+  const flightState = useService(flightProbe);
 
   const flightCount = useLiveQuery(
     () =>
@@ -107,24 +251,7 @@ export function MainScreen({ rhState, elrsState, telemetry, armedProbe, sessionI
       </nav>
 
       <div style={{ padding: "1rem 0" }}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "5rem",
-            height: "5rem",
-            border: "1px solid var(--pico-muted-color)",
-            borderRadius: "8px",
-            lineHeight: 1,
-          }}
-        >
-          <strong style={{ fontSize: "2rem" }}>{flightCount}</strong>
-          <span style={{ fontSize: "0.75rem", marginTop: "4px", color: "var(--pico-muted-color)" }}>
-            {flightCount === 1 ? "flight" : "flights"}
-          </span>
-        </div>
+        <FlightPhaseBar current={flightState} flightCount={flightCount} />
       </div>
 
       <div style={{ marginTop: "auto", paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
