@@ -1,5 +1,6 @@
 export interface Settings {
   theme: "auto" | "dark" | "light";
+  callsign: string;
   armChannel: number;
   armRangeMin: number;
   armRangeMax: number;
@@ -13,6 +14,7 @@ const STORAGE_KEY = "settings";
 
 const defaults: Settings = {
   theme: "auto",
+  callsign: "",
   armChannel: 4,
   armRangeMin: 1500,
   armRangeMax: 2012,

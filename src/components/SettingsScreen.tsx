@@ -129,6 +129,22 @@ export function SettingsScreen({
       />
 
       <article>
+        <header>Pilot Identity</header>
+        <label>
+          Callsign
+          <input
+            type="text"
+            value={settings.callsign}
+            placeholder="e.g. PILOT1"
+            onInput={(e) => onSettingChange({ callsign: (e.target as HTMLInputElement).value })}
+          />
+        </label>
+        <small>
+          Used to filter RotorHazard lap crossings to your node. Leave empty to receive all crossings.
+        </small>
+      </article>
+
+      <article>
         <header>Appearance</header>
         <label>
           Theme

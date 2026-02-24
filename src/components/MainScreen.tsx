@@ -1,4 +1,6 @@
+import { useState, useEffect, useRef } from "preact/hooks";
 import type { RhState } from "../services/RotorhazardService";
+import type { RotorhazardService } from "../services/RotorhazardService";
 import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
 import type { ArmedProbe } from "../probes/ArmedProbe";
@@ -9,9 +11,11 @@ import { db } from "../db";
 import { StickOverlay } from "./StickOverlay";
 import { BatteryOverlay } from "./BatteryOverlay";
 import { DroneOverlay } from "./DroneOverlay";
+import { LapOverlay } from "./LapOverlay";
 
 interface Props {
   rhState: RhState;
+  rh: RotorhazardService;
   elrsState: ElrsState;
   telemetry: TelemetryService;
   armedProbe: ArmedProbe;
@@ -199,11 +203,28 @@ function FlightPhaseBar({ current, flightCount }: { current: FlightState; flight
   );
 }
 
-export function MainScreen({ rhState, elrsState, telemetry, armedProbe, flightProbe, sessionId, onStop, onOpenSettings, onOpenReview }: Props) {
+export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flightProbe, sessionId, onStop, onOpenSettings, onOpenReview }: Props) {
   const channelState = useServiceThrottled(telemetry.channels);
   const batteryState = useService(telemetry.battery);
   const armState = useService(armedProbe);
   const flightState = useService(flightProbe);
+
+  const [lapCount, setLapCount] = useState(0);
+  const prevArmRef = useRef(armState);
+
+  useEffect(() => {
+    const prev = prevArmRef.current;
+    prevArmRef.current = armState;
+    if (prev === "off" && armState !== "off") {
+      setLapCount(0);
+    }
+  }, [armState]);
+
+  useEffect(() => {
+    return rh.onLapCrossing(() => {
+      setLapCount((n) => n + 1);
+    });
+  }, [rh]);
 
   const flightCount = useLiveQuery(
     () =>
@@ -279,6 +300,9 @@ export function MainScreen({ rhState, elrsState, telemetry, armedProbe, flightPr
             <StickOverlay channels={channelState.data.channels} />
           </div>
         )}
+        <div style={{ position: "absolute", right: 0, bottom: "1rem", display: "flex", alignItems: "stretch" }}>
+          <LapOverlay lap={lapCount} />
+        </div>
       </div>
     </div>
   );

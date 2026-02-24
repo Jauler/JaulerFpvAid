@@ -90,6 +90,10 @@ export function App() {
   const handleElrsConnect = useCallback(() => elrs.connect(), [elrs]);
   const handleElrsDisconnect = useCallback(() => elrs.disconnect(), [elrs]);
 
+  useEffect(() => {
+    rh.setCallsign(settings.callsign);
+  }, [settings.callsign, rh]);
+
   // Start/stop telemetry in response to ELRS connection changes.
   // Only active once the user has left the setup screen.
   useEffect(() => {
@@ -185,6 +189,7 @@ export function App() {
     return (
       <MainScreen
         rhState={rhState}
+        rh={rh}
         elrsState={elrsState}
         telemetry={telemetry}
         armedProbe={armedProbe}
