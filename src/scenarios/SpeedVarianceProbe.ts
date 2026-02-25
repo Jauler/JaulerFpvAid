@@ -56,7 +56,8 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
   async startSession(sessionId: number): Promise<void> {
     this.sessionId = sessionId;
     this.lapTimes = [];
-    this.skipNextCrossing = true;
+    const flightState = this.flightProbe.state;
+    this.skipNextCrossing = flightState === "off" || flightState === "crashed";
     const s = this.getSettings();
 
     // Load existing laps from DB for session resume
@@ -144,6 +145,22 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
     this.sessionId = null;
     this.lapTimes = [];
     this.setState({ ...INITIAL_STATE });
+  }
+
+  forceLevel(level: SpeedLevel): void {
+    const cur = this.state;
+    if (cur.phase !== "active") return;
+    const avg = this.computeBaseline();
+    const targets = this.computeTargetLapTimes(avg);
+    this.setState({
+      ...cur,
+      targetLevel: level,
+      targetLapTimes: targets,
+      consecutiveOnTarget: 0,
+    });
+    this.recordLevelEvent("manual", level, avg, null);
+    const s = this.getSettings();
+    announceLevel(level, s.ttsVoice, s.ttsRate, this.describeRange(level, avg));
   }
 
   private onLap(crossing: LapCrossing): void {
@@ -270,7 +287,7 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
   }
 
   private async recordLevelEvent(
-    trigger: "lap" | "crash",
+    trigger: "lap" | "crash" | "manual",
     targetLevel: SpeedLevel,
     runningAverage: number,
     lapTime: number | null,

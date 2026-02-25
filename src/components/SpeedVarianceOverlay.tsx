@@ -3,6 +3,7 @@ import type { SpeedVarianceState, SpeedLevel } from "../scenarios/SpeedVarianceP
 interface Props {
   state: SpeedVarianceState;
   consecutiveLapsToLevelUp: number;
+  onForceLevel?: (level: SpeedLevel) => void;
 }
 
 function levelColor(level: SpeedLevel): string {
@@ -175,7 +176,7 @@ function StreakDots({ current, total, color }: { current: number; total: number;
   );
 }
 
-export function SpeedVarianceOverlay({ state, consecutiveLapsToLevelUp }: Props) {
+export function SpeedVarianceOverlay({ state, consecutiveLapsToLevelUp, onForceLevel }: Props) {
   if (state.phase === "idle") return null;
 
   const isActive = state.phase === "active";
@@ -199,17 +200,39 @@ export function SpeedVarianceOverlay({ state, consecutiveLapsToLevelUp }: Props)
         <div style={{ width: "2px", height: "12px", backgroundColor: isActive ? "var(--pico-primary)" : "var(--pico-muted-color)", transition: "background-color 0.2s ease" }} />
       </div>
 
-      {/* Level gauge */}
-      <LevelGauge
-        targetLevel={state.targetLevel}
-        muted={!isActive}
-        boundaries={isActive && state.targetLapTimes ? [
-          state.targetLapTimes.levelMinus1,
-          state.targetLapTimes.level0[1],
-          state.targetLapTimes.level0[0],
-          state.targetLapTimes.level2,
-        ] : null}
-      />
+      {/* Level gauge with +/- buttons */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {isActive && onForceLevel ? (
+          <button
+            class="outline secondary"
+            style={{ padding: "0.25rem 0.6rem", fontSize: "1.2rem", lineHeight: 1, margin: 0 }}
+            disabled={state.targetLevel <= -2}
+            onClick={() => onForceLevel((state.targetLevel - 1) as SpeedLevel)}
+          >
+            -
+          </button>
+        ) : <div style={{ width: "40px" }} />}
+        <LevelGauge
+          targetLevel={state.targetLevel}
+          muted={!isActive}
+          boundaries={isActive && state.targetLapTimes ? [
+            state.targetLapTimes.levelMinus1,
+            state.targetLapTimes.level0[1],
+            state.targetLapTimes.level0[0],
+            state.targetLapTimes.level2,
+          ] : null}
+        />
+        {isActive && onForceLevel ? (
+          <button
+            class="outline secondary"
+            style={{ padding: "0.25rem 0.6rem", fontSize: "1.2rem", lineHeight: 1, margin: 0 }}
+            disabled={state.targetLevel >= 2}
+            onClick={() => onForceLevel((state.targetLevel + 1) as SpeedLevel)}
+          >
+            +
+          </button>
+        ) : <div style={{ width: "40px" }} />}
+      </div>
 
       {/* Streak dots + info (only when active) */}
       {isActive && (

@@ -15,7 +15,8 @@ export class LapTracker {
 
   startSession(sessionId: number): void {
     this.sessionId = sessionId;
-    this.skipNextCrossing = true;
+    const flightState = this.flightProbe.state;
+    this.skipNextCrossing = flightState === "off" || flightState === "crashed";
     this.unsubLap = this.rh.onLapCrossing((crossing) => this.onLap(crossing));
     this.unsubFlight = this.flightProbe.subscribe((fs) => {
       if (fs === "off" || fs === "crashed") {

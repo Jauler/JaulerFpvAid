@@ -49,7 +49,7 @@ export interface SvLevelEvent {
   targetLevel: number;
   runningAverage: number;
   lapTime: number | null;
-  trigger: "lap" | "crash";
+  trigger: "lap" | "crash" | "manual";
 }
 
 class AppDatabase extends Dexie {

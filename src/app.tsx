@@ -196,6 +196,7 @@ export function App() {
         sessionId={sessionId}
         speedVarianceState={speedVarianceState}
         consecutiveLapsToLevelUp={settings.consecutiveLapsToLevelUp}
+        onForceLevel={(level) => speedVarianceProbe.forceLevel(level)}
         onStop={handleStop}
         onOpenSettings={() => setScreen("settings")}
         onOpenReview={() => setScreen("review")}

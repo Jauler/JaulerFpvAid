@@ -26,9 +26,11 @@ export function SpeedLevelChart({ events }: Props) {
 
     const labels = sorted.map((_, i) => `${i + 1}`);
     const data = sorted.map((e) => e.targetLevel);
-    const pointStyles = sorted.map((e) => (e.trigger === "crash" ? "triangle" : "circle"));
+    const pointStyles = sorted.map((e) =>
+      e.trigger === "crash" ? "triangle" : e.trigger === "manual" ? "rect" : "circle",
+    );
     const pointColors = sorted.map((e) =>
-      e.trigger === "crash" ? "rgb(255, 99, 132)" : "rgb(75, 192, 192)",
+      e.trigger === "crash" ? "rgb(255, 99, 132)" : e.trigger === "manual" ? "rgb(255, 206, 86)" : "rgb(75, 192, 192)",
     );
 
     chartRef.current = new Chart(canvasRef.current, {

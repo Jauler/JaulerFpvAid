@@ -5,7 +5,7 @@ import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
 import type { ArmedProbe } from "../probes/ArmedProbe";
 import type { FlightProbe, FlightState } from "../probes/FlightProbe";
-import type { SpeedVarianceState } from "../scenarios/SpeedVarianceProbe";
+import type { SpeedVarianceState, SpeedLevel } from "../scenarios/SpeedVarianceProbe";
 import { useService, useServiceThrottled } from "../hooks/useService";
 import { useLiveQuery } from "../hooks/useLiveQuery";
 import { db } from "../db";
@@ -25,6 +25,7 @@ interface Props {
   sessionId: number | null;
   speedVarianceState: SpeedVarianceState;
   consecutiveLapsToLevelUp: number;
+  onForceLevel: (level: SpeedLevel) => void;
   onStop: () => void;
   onOpenSettings: () => void;
   onOpenReview: () => void;
@@ -207,7 +208,7 @@ function FlightPhaseBar({ current, flightCount }: { current: FlightState; flight
   );
 }
 
-export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flightProbe, sessionId, speedVarianceState, consecutiveLapsToLevelUp, onStop, onOpenSettings, onOpenReview }: Props) {
+export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flightProbe, sessionId, speedVarianceState, consecutiveLapsToLevelUp, onForceLevel, onStop, onOpenSettings, onOpenReview }: Props) {
   const channelState = useServiceThrottled(telemetry.channels);
   const batteryState = useService(telemetry.battery);
   const armState = useService(armedProbe);
@@ -320,7 +321,7 @@ export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flig
       </div>
 
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <SpeedVarianceOverlay state={speedVarianceState} consecutiveLapsToLevelUp={consecutiveLapsToLevelUp} />
+        <SpeedVarianceOverlay state={speedVarianceState} consecutiveLapsToLevelUp={consecutiveLapsToLevelUp} onForceLevel={onForceLevel} />
       </div>
 
       <div style={{ paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
