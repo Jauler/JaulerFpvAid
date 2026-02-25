@@ -172,7 +172,7 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
         });
         this.recordLevelEvent("lap", 0, avg, lapTime);
         const s = this.getSettings();
-        announceLevel(0, s.ttsVoice, s.ttsRate);
+        announceLevel(0, s.ttsVoice, s.ttsRate, this.describeRange(0, avg));
       } else {
         this.setState({
           ...cur,
@@ -224,7 +224,7 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
     });
     if (levelChanged) {
       this.recordLevelEvent("lap", level, avg, lapTime);
-      announceLevel(level, s.ttsVoice, s.ttsRate);
+      announceLevel(level, s.ttsVoice, s.ttsRate, this.describeRange(level, avg));
     }
   }
 
@@ -251,7 +251,7 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
       consecutiveOnTarget: 0,
     });
     this.recordLevelEvent("crash", newLevel, cur.runningAverage, null);
-    announceLevel(newLevel, s.ttsVoice, s.ttsRate);
+    announceLevel(newLevel, s.ttsVoice, s.ttsRate, this.describeRange(newLevel, cur.runningAverage));
   }
 
   private async recordLevelEvent(
@@ -274,6 +274,28 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
       lapTime,
       trigger,
     });
+  }
+
+  private describeRange(level: SpeedLevel, avg: number): string {
+    const s = this.getSettings();
+    const innerFast = avg * (1 - s.svInnerFastPct / 100);
+    const innerSlow = avg * (1 + s.svInnerSlowPct / 100);
+    const outerFast = avg * (1 - s.svOuterFastPct / 100);
+    const outerSlow = avg * (1 + s.svOuterSlowPct / 100);
+    const fmt = (ms: number) => (ms / 1000).toFixed(1);
+
+    switch (level) {
+      case 2:
+        return `faster than ${fmt(outerFast)}`;
+      case 1:
+        return `from ${fmt(outerFast)} to ${fmt(innerFast)}`;
+      case 0:
+        return `from ${fmt(innerFast)} to ${fmt(innerSlow)}`;
+      case -1:
+        return `from ${fmt(innerSlow)} to ${fmt(outerSlow)}`;
+      case -2:
+        return `slower than ${fmt(outerSlow)}`;
+    }
   }
 
   computeTargetLapTimes(avg: number): TargetLapTimes {

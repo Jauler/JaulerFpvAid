@@ -52,7 +52,7 @@ export function speak(text: string, voiceName: string, rate: number): void {
   }
 }
 
-export function announceLevel(level: number, voiceName: string, rate: number): void {
+export function announceLevel(level: number, voiceName: string, rate: number, rangeText?: string): void {
   let text: string;
   if (level === 0) {
     text = "Level 0";
@@ -61,5 +61,6 @@ export function announceLevel(level: number, voiceName: string, rate: number): v
   } else {
     text = `Level minus ${Math.abs(level)}`;
   }
+  if (rangeText) text += `, ${rangeText}`;
   speak(text, voiceName, rate);
 }
