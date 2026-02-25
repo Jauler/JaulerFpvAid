@@ -34,12 +34,21 @@ export interface CrashEvent {
   timestamp: Date;
 }
 
+export interface LapEvent {
+  id?: number;
+  flightId: number;
+  timestamp: Date;
+  lapNumber: number;
+  lapTime: number;
+}
+
 class AppDatabase extends Dexie {
   sessions!: Table<Session>;
   flights!: Table<Flight>;
   batterySamples!: Table<BatterySample>;
   stickSamples!: Table<StickSample>;
   crashEvents!: Table<CrashEvent>;
+  lapEvents!: Table<LapEvent>;
 
   constructor() {
     super("fpv-aid");
@@ -65,6 +74,14 @@ class AppDatabase extends Dexie {
       batterySamples: "++id, flightId",
       stickSamples: "++id, flightId",
       crashEvents: "++id, flightId",
+    });
+    this.version(5).stores({
+      sessions: "++id",
+      flights: "++id, sessionId",
+      batterySamples: "++id, flightId",
+      stickSamples: "++id, flightId",
+      crashEvents: "++id, flightId",
+      lapEvents: "++id, flightId",
     });
   }
 }

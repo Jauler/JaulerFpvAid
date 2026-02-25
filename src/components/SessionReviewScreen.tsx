@@ -11,6 +11,7 @@ interface Props {
 
 interface FlightRow extends Flight {
   crashCount: number;
+  lapCount: number;
   duration: number;
 }
 
@@ -30,9 +31,13 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
             .where("flightId")
             .equals(f.id!)
             .count();
+          const lapCount = await db.lapEvents
+            .where("flightId")
+            .equals(f.id!)
+            .count();
           const endMs = f.endedAt ? f.endedAt.getTime() : Date.now();
           const duration = (endMs - f.startedAt.getTime()) / 1000;
-          return { ...f, crashCount, duration };
+          return { ...f, crashCount, lapCount, duration };
         }),
       );
     },
@@ -147,6 +152,7 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
                         <th>#</th>
                         <th>Started</th>
                         <th>Duration</th>
+                        <th>Laps</th>
                         <th>Crashes</th>
                       </tr>
                     </thead>
@@ -156,6 +162,7 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
                           <td>{flights.length - i}</td>
                           <td>{formatTime(f.startedAt)}</td>
                           <td>{formatDuration(f.duration)}</td>
+                          <td>{f.lapCount}</td>
                           <td>{f.crashCount}</td>
                         </tr>
                       ))}

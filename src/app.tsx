@@ -9,6 +9,7 @@ import { FlightProbe } from "./probes/FlightProbe";
 import { BatteryTracker } from "./trackers/BatteryTracker";
 import { CrashTracker } from "./trackers/CrashTracker";
 import { StickTracker } from "./trackers/StickTracker";
+import { LapTracker } from "./trackers/LapTracker";
 import { MainScreen } from "./components/MainScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { SessionList } from "./components/SessionList";
@@ -73,6 +74,11 @@ export function App() {
     [armedProbe, telemetry],
   );
 
+  const lapTracker = useMemo(
+    () => new LapTracker(rh),
+    [rh],
+  );
+
   const [sessionId, setSessionId] = useState<number | null>(null);
 
   const rhState = useService(rh);
@@ -114,20 +120,22 @@ export function App() {
       batteryTracker.resumeSession(sessionId);
       crashTracker.startSession(sessionId);
       stickTracker.resumeSession(sessionId);
+      lapTracker.startSession(sessionId);
       setSessionId(sessionId);
       setScreen("main");
     },
-    [rh, elrs, batteryTracker, crashTracker, stickTracker],
+    [rh, elrs, batteryTracker, crashTracker, stickTracker, lapTracker],
   );
 
   const handleStop = useCallback(async () => {
     crashTracker.endSession();
+    lapTracker.endSession();
     await stickTracker.endSession();
     await batteryTracker.endSession();
     setSessionId(null);
     telemetry.stop();
     setScreen("setup");
-  }, [telemetry, batteryTracker, crashTracker, stickTracker]);
+  }, [telemetry, batteryTracker, crashTracker, stickTracker, lapTracker]);
 
   const handleSettingsChange = useCallback(
     (partial: Partial<Settings>) =>
