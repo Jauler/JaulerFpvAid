@@ -1,5 +1,5 @@
 import { useLiveQuery } from "../hooks/useLiveQuery";
-import { db, type Flight, type BatterySample, type CrashEvent, type StickSample } from "../db";
+import { db, type Flight, type BatterySample, type CrashEvent, type StickSample, type LapEvent } from "../db";
 import { BatteryChart } from "./BatteryChart";
 import { StickHeatmap } from "./StickHeatmap";
 import { formatTime, formatDuration } from "../utils/format";
@@ -24,6 +24,12 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
 
   const stickSamples = useLiveQuery<StickSample[]>(
     () => db.stickSamples.where("flightId").equals(flightId).toArray(),
+    [flightId],
+    [],
+  );
+
+  const lapEvents = useLiveQuery<LapEvent[]>(
+    () => db.lapEvents.where("flightId").equals(flightId).toArray(),
     [flightId],
     [],
   );
@@ -96,6 +102,39 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
               <StickHeatmap stickSamples={stickSamples} />
             </article>
           )}
+        </div>
+      )}
+
+      {lapEvents.length > 0 && (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%" }}>
+            <thead>
+              <tr>
+                <th>Lap</th>
+                <th>Time</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {lapEvents.map((le) => (
+                <tr key={le.id}>
+                  <td>{le.lapNumber}</td>
+                  <td>{(le.lapTime / 1000).toFixed(3)}s</td>
+                  <td>
+                    <button
+                      class="outline secondary"
+                      style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}
+                      onClick={() => {
+                        if (le.id != null) db.lapEvents.delete(le.id);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
