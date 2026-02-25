@@ -1,0 +1,306 @@
+import { Subscribable } from "../services/Subscribable";
+import type { RotorhazardService, LapCrossing } from "../services/RotorhazardService";
+import type { FlightProbe, FlightState } from "../probes/FlightProbe";
+import type { Settings } from "../settings";
+import { db } from "../db";
+import { announceLevel, speak, playDing } from "../utils/audio";
+
+export type SpeedLevel = -2 | -1 | 0 | 1 | 2;
+export type TrainingPhase = "idle" | "warmup" | "active";
+
+export interface TargetLapTimes {
+  level2: number;
+  level1: number;
+  level0: [number, number];
+  levelMinus1: number;
+  levelMinus2: number;
+}
+
+export interface SpeedVarianceState {
+  phase: TrainingPhase;
+  warmupLapsCompleted: number;
+  warmupLapsRequired: number;
+  runningAverage: number;
+  targetLevel: SpeedLevel;
+  targetLapTimes: TargetLapTimes | null;
+  consecutiveOnTarget: number;
+  lastLapTime: number | null;
+}
+
+const INITIAL_STATE: SpeedVarianceState = {
+  phase: "idle",
+  warmupLapsCompleted: 0,
+  warmupLapsRequired: 0,
+  runningAverage: 0,
+  targetLevel: 0,
+  targetLapTimes: null,
+  consecutiveOnTarget: 0,
+  lastLapTime: null,
+};
+
+export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
+  private lapTimes: number[] = [];
+  private unsubLap: (() => void) | null = null;
+  private unsubFlight: (() => void) | null = null;
+  private sessionId: number | null = null;
+
+  constructor(
+    private rh: RotorhazardService,
+    private flightProbe: FlightProbe,
+    private getSettings: () => Settings,
+  ) {
+    super({ ...INITIAL_STATE });
+  }
+
+  async startSession(sessionId: number): Promise<void> {
+    this.sessionId = sessionId;
+    this.lapTimes = [];
+    const s = this.getSettings();
+
+    // Load existing laps from DB for session resume
+    const flightIds = await db.flights
+      .where("sessionId")
+      .equals(sessionId)
+      .primaryKeys();
+
+    if (flightIds.length > 0) {
+      const existing = await db.lapEvents
+        .where("flightId")
+        .anyOf(flightIds)
+        .toArray();
+      for (const lap of existing) {
+        if (lap.lapNumber >= 1) {
+          this.lapTimes.push(lap.lapTime);
+        }
+      }
+    }
+
+    const completed = this.lapTimes.length;
+    const avg = completed > 0
+      ? this.lapTimes.reduce((a, b) => a + b, 0) / completed
+      : 0;
+    const lastLap = completed > 0 ? this.lapTimes[completed - 1] : null;
+
+    if (completed >= s.warmupLaps) {
+      // Restore last level from persisted events
+      let restoredLevel: SpeedLevel = 0;
+      let consecutive = 0;
+
+      if (flightIds.length > 0) {
+        const levelEvents = await db.svLevelEvents
+          .where("flightId")
+          .anyOf(flightIds)
+          .toArray();
+        if (levelEvents.length > 0) {
+          levelEvents.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+          const lastEvent = levelEvents[levelEvents.length - 1];
+          restoredLevel = lastEvent.targetLevel as SpeedLevel;
+
+          // Replay recent laps to compute consecutiveOnTarget
+          const warmupCount = s.warmupLaps;
+          const activeLaps = this.lapTimes.slice(warmupCount);
+          for (let i = activeLaps.length - 1; i >= 0; i--) {
+            if (this.lapFitsCurrentTarget(activeLaps[i], avg, restoredLevel)) {
+              consecutive++;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+
+      const targets = this.computeTargetLapTimes(avg);
+      this.setState({
+        ...INITIAL_STATE,
+        phase: "active",
+        warmupLapsCompleted: completed,
+        warmupLapsRequired: s.warmupLaps,
+        runningAverage: avg,
+        targetLevel: restoredLevel,
+        targetLapTimes: targets,
+        consecutiveOnTarget: consecutive,
+        lastLapTime: lastLap,
+      });
+    } else {
+      this.setState({
+        ...INITIAL_STATE,
+        phase: "warmup",
+        warmupLapsCompleted: completed,
+        warmupLapsRequired: s.warmupLaps,
+        runningAverage: avg,
+        lastLapTime: lastLap,
+      });
+    }
+
+    this.unsubLap = this.rh.onLapCrossing((c) => this.onLap(c));
+    this.unsubFlight = this.flightProbe.subscribe((fs) => this.onFlightStateChange(fs));
+  }
+
+  endSession(): void {
+    this.unsubLap?.();
+    this.unsubFlight?.();
+    this.unsubLap = null;
+    this.unsubFlight = null;
+    this.sessionId = null;
+    this.lapTimes = [];
+    this.setState({ ...INITIAL_STATE });
+  }
+
+  private onLap(crossing: LapCrossing): void {
+    // Skip holeshots (lap 0)
+    if (crossing.lapNumber === 0) return;
+
+    const lapTime = crossing.lapTime;
+    this.lapTimes.push(lapTime);
+    const avg = this.lapTimes.reduce((a, b) => a + b, 0) / this.lapTimes.length;
+
+    const cur = this.state;
+
+    if (cur.phase === "warmup") {
+      const completed = cur.warmupLapsCompleted + 1;
+      if (completed >= cur.warmupLapsRequired) {
+        const targets = this.computeTargetLapTimes(avg);
+        this.setState({
+          ...cur,
+          phase: "active",
+          warmupLapsCompleted: completed,
+          runningAverage: avg,
+          targetLevel: 0,
+          targetLapTimes: targets,
+          consecutiveOnTarget: 0,
+          lastLapTime: lapTime,
+        });
+        this.recordLevelEvent("lap", 0, avg, lapTime);
+        const s = this.getSettings();
+        announceLevel(0, s.ttsVoice, s.ttsRate);
+      } else {
+        this.setState({
+          ...cur,
+          warmupLapsCompleted: completed,
+          runningAverage: avg,
+          lastLapTime: lapTime,
+        });
+      }
+      return;
+    }
+
+    if (cur.phase !== "active") return;
+
+    const s = this.getSettings();
+    const targets = this.computeTargetLapTimes(avg);
+    let level = cur.targetLevel;
+    let consecutive = cur.consecutiveOnTarget;
+
+    // Check if lap fits current target range
+    if (this.lapFitsCurrentTarget(lapTime, avg, level)) {
+      consecutive += 1;
+      playDing();
+    }
+
+    // Level up check
+    if (consecutive >= s.consecutiveLapsToLevelUp && level < 2) {
+      level = (level + 1) as SpeedLevel;
+      consecutive = 0;
+    }
+
+    // Random level down
+    if (level > -2 && Math.random() * 100 < s.levelDownChancePct) {
+      level = (level - 1) as SpeedLevel;
+      consecutive = 0;
+    }
+
+    const levelChanged = level !== cur.targetLevel;
+    this.setState({
+      ...cur,
+      runningAverage: avg,
+      targetLevel: level,
+      targetLapTimes: targets,
+      consecutiveOnTarget: consecutive,
+      lastLapTime: lapTime,
+    });
+    if (levelChanged) {
+      this.recordLevelEvent("lap", level, avg, lapTime);
+      announceLevel(level, s.ttsVoice, s.ttsRate);
+    }
+  }
+
+  private onFlightStateChange(fs: FlightState): void {
+    const s = this.getSettings();
+    const stateWords: Record<string, string> = {
+      prepare: "prepare",
+      flying: "liftoff",
+      landed: "land",
+      crashed: "crash",
+    };
+    const word = stateWords[fs];
+    if (word) speak(word, s.ttsVoice, s.ttsRate);
+
+    if (fs !== "crashed") return;
+    const cur = this.state;
+    if (cur.phase !== "active") return;
+    if (cur.targetLevel <= -2) return;
+
+    const newLevel = (cur.targetLevel - 1) as SpeedLevel;
+    this.setState({
+      ...cur,
+      targetLevel: newLevel,
+      consecutiveOnTarget: 0,
+    });
+    this.recordLevelEvent("crash", newLevel, cur.runningAverage, null);
+    announceLevel(newLevel, s.ttsVoice, s.ttsRate);
+  }
+
+  private async recordLevelEvent(
+    trigger: "lap" | "crash",
+    targetLevel: SpeedLevel,
+    runningAverage: number,
+    lapTime: number | null,
+  ): Promise<void> {
+    if (this.sessionId == null) return;
+    const flight = await db.flights
+      .where("sessionId")
+      .equals(this.sessionId)
+      .last();
+    if (!flight?.id) return;
+    await db.svLevelEvents.add({
+      flightId: flight.id,
+      timestamp: new Date(),
+      targetLevel,
+      runningAverage,
+      lapTime,
+      trigger,
+    });
+  }
+
+  computeTargetLapTimes(avg: number): TargetLapTimes {
+    const s = this.getSettings();
+    return {
+      level2: avg * (1 - s.svOuterFastPct / 100),
+      level1: avg * (1 - s.svInnerFastPct / 100),
+      level0: [avg * (1 - s.svInnerFastPct / 100), avg * (1 + s.svInnerSlowPct / 100)],
+      levelMinus1: avg * (1 + s.svOuterSlowPct / 100),
+      levelMinus2: avg * (1 + s.svOuterSlowPct / 100),
+    };
+  }
+
+  private lapFitsCurrentTarget(lapTime: number, avg: number, level: SpeedLevel): boolean {
+    const s = this.getSettings();
+    const innerFastBound = avg * (1 - s.svInnerFastPct / 100);
+    const innerSlowBound = avg * (1 + s.svInnerSlowPct / 100);
+    const outerFastBound = avg * (1 - s.svOuterFastPct / 100);
+    const outerSlowBound = avg * (1 + s.svOuterSlowPct / 100);
+
+    switch (level) {
+      case 2:
+        return lapTime < outerFastBound;
+      case 1:
+        return lapTime >= outerFastBound && lapTime < innerFastBound;
+      case 0:
+        return lapTime >= innerFastBound && lapTime <= innerSlowBound;
+      case -1:
+        return lapTime > innerSlowBound && lapTime <= outerSlowBound;
+      case -2:
+        return lapTime > outerSlowBound;
+    }
+  }
+}

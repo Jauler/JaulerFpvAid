@@ -42,6 +42,16 @@ export interface LapEvent {
   lapTime: number;
 }
 
+export interface SvLevelEvent {
+  id?: number;
+  flightId: number;
+  timestamp: Date;
+  targetLevel: number;
+  runningAverage: number;
+  lapTime: number | null;
+  trigger: "lap" | "crash";
+}
+
 class AppDatabase extends Dexie {
   sessions!: Table<Session>;
   flights!: Table<Flight>;
@@ -49,6 +59,7 @@ class AppDatabase extends Dexie {
   stickSamples!: Table<StickSample>;
   crashEvents!: Table<CrashEvent>;
   lapEvents!: Table<LapEvent>;
+  svLevelEvents!: Table<SvLevelEvent>;
 
   constructor() {
     super("fpv-aid");
@@ -82,6 +93,15 @@ class AppDatabase extends Dexie {
       stickSamples: "++id, flightId",
       crashEvents: "++id, flightId",
       lapEvents: "++id, flightId",
+    });
+    this.version(6).stores({
+      sessions: "++id",
+      flights: "++id, sessionId",
+      batterySamples: "++id, flightId",
+      stickSamples: "++id, flightId",
+      crashEvents: "++id, flightId",
+      lapEvents: "++id, flightId",
+      svLevelEvents: "++id, flightId",
     });
   }
 }

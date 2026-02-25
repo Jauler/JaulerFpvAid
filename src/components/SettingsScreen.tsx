@@ -1,3 +1,4 @@
+import { useState, useEffect } from "preact/hooks";
 import type { RhState, RhConfig } from "../services/RotorhazardService";
 import type { ElrsState } from "../services/ElrsService";
 import { RotorhazardConnect } from "./RotorhazardConnect";
@@ -98,6 +99,58 @@ function ModeRangeSection({
   );
 }
 
+function AudioSection({
+  settings,
+  onSettingChange,
+}: {
+  settings: Settings;
+  onSettingChange: (partial: Partial<Settings>) => void;
+}) {
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    const update = () => setVoices(speechSynthesis.getVoices());
+    update();
+    speechSynthesis.addEventListener("voiceschanged", update);
+    return () => speechSynthesis.removeEventListener("voiceschanged", update);
+  }, []);
+
+  return (
+    <article>
+      <header>Audio</header>
+      <label>
+        TTS Voice
+        <select
+          value={settings.ttsVoice}
+          onChange={(e) => onSettingChange({ ttsVoice: (e.target as HTMLSelectElement).value })}
+        >
+          <option value="">Default</option>
+          {voices.map((v) => (
+            <option key={v.name} value={v.name}>
+              {v.name} ({v.lang})
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Voice rate
+        <input
+          key={settings.ttsRate}
+          type="number"
+          min={0.5}
+          max={2.0}
+          step={0.1}
+          defaultValue={settings.ttsRate}
+          onBlur={(e) => {
+            const v = Number((e.target as HTMLInputElement).value);
+            if (!Number.isNaN(v)) onSettingChange({ ttsRate: v });
+          }}
+        />
+      </label>
+    </article>
+  );
+}
+
 export function SettingsScreen({
   settings,
   channels,
@@ -161,6 +214,8 @@ export function SettingsScreen({
         </label>
       </article>
 
+      <AudioSection settings={settings} onSettingChange={onSettingChange} />
+
       <ModeRangeSection
         title="Arm"
         channel={settings.armChannel}
@@ -203,6 +258,110 @@ export function SettingsScreen({
         onRangeMinChange={(v) => onSettingChange({ turtleRangeMin: v })}
         onRangeMaxChange={(v) => onSettingChange({ turtleRangeMax: v })}
       />
+
+      <article>
+        <header>Speed Variance Training</header>
+        <label>
+          Warmup laps
+          <input
+            key={settings.warmupLaps}
+            type="number"
+            min={1}
+            defaultValue={settings.warmupLaps}
+            onBlur={(e) => {
+              const v = Number((e.target as HTMLInputElement).value);
+              if (!Number.isNaN(v)) onSettingChange({ warmupLaps: v });
+            }}
+          />
+        </label>
+        <label>
+          Consecutive laps to level up
+          <input
+            key={settings.consecutiveLapsToLevelUp}
+            type="number"
+            min={1}
+            defaultValue={settings.consecutiveLapsToLevelUp}
+            onBlur={(e) => {
+              const v = Number((e.target as HTMLInputElement).value);
+              if (!Number.isNaN(v)) onSettingChange({ consecutiveLapsToLevelUp: v });
+            }}
+          />
+        </label>
+        <label>
+          Level down chance (%)
+          <input
+            key={settings.levelDownChancePct}
+            type="number"
+            min={0}
+            max={100}
+            defaultValue={settings.levelDownChancePct}
+            onBlur={(e) => {
+              const v = Number((e.target as HTMLInputElement).value);
+              if (!Number.isNaN(v)) onSettingChange({ levelDownChancePct: v });
+            }}
+          />
+        </label>
+        <div class="grid">
+          <label>
+            Inner fast band (%)
+            <input
+              key={settings.svInnerFastPct}
+              type="number"
+              min={0}
+              max={100}
+              defaultValue={settings.svInnerFastPct}
+              onBlur={(e) => {
+                const v = Number((e.target as HTMLInputElement).value);
+                if (!Number.isNaN(v)) onSettingChange({ svInnerFastPct: v });
+              }}
+            />
+          </label>
+          <label>
+            Inner slow band (%)
+            <input
+              key={settings.svInnerSlowPct}
+              type="number"
+              min={0}
+              max={100}
+              defaultValue={settings.svInnerSlowPct}
+              onBlur={(e) => {
+                const v = Number((e.target as HTMLInputElement).value);
+                if (!Number.isNaN(v)) onSettingChange({ svInnerSlowPct: v });
+              }}
+            />
+          </label>
+        </div>
+        <div class="grid">
+          <label>
+            Outer fast band (%)
+            <input
+              key={settings.svOuterFastPct}
+              type="number"
+              min={0}
+              max={100}
+              defaultValue={settings.svOuterFastPct}
+              onBlur={(e) => {
+                const v = Number((e.target as HTMLInputElement).value);
+                if (!Number.isNaN(v)) onSettingChange({ svOuterFastPct: v });
+              }}
+            />
+          </label>
+          <label>
+            Outer slow band (%)
+            <input
+              key={settings.svOuterSlowPct}
+              type="number"
+              min={0}
+              max={100}
+              defaultValue={settings.svOuterSlowPct}
+              onBlur={(e) => {
+                const v = Number((e.target as HTMLInputElement).value);
+                if (!Number.isNaN(v)) onSettingChange({ svOuterSlowPct: v });
+              }}
+            />
+          </label>
+        </div>
+      </article>
 
       <button class="secondary" style={{ marginBottom: "2rem" }} onClick={onBack}>
         Back

@@ -8,6 +8,15 @@ export interface Settings {
   turtleRangeMin: number;
   turtleRangeMax: number;
   crashThrottlePct: number;
+  warmupLaps: number;
+  consecutiveLapsToLevelUp: number;
+  levelDownChancePct: number;
+  svInnerFastPct: number;
+  svInnerSlowPct: number;
+  svOuterFastPct: number;
+  svOuterSlowPct: number;
+  ttsVoice: string;
+  ttsRate: number;
 }
 
 const STORAGE_KEY = "settings";
@@ -22,6 +31,15 @@ const defaults: Settings = {
   turtleRangeMin: 1500,
   turtleRangeMax: 2012,
   crashThrottlePct: 25,
+  warmupLaps: 10,
+  consecutiveLapsToLevelUp: 3,
+  levelDownChancePct: 10,
+  svInnerFastPct: 10,
+  svInnerSlowPct: 10,
+  svOuterFastPct: 30,
+  svOuterSlowPct: 30,
+  ttsVoice: "",
+  ttsRate: 1.0,
 };
 
 export function applyTheme(theme: Settings["theme"]): void {

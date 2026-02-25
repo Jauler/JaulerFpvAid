@@ -14,6 +14,7 @@ import { MainScreen } from "./components/MainScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { SessionList } from "./components/SessionList";
 import { SessionReviewScreen } from "./components/SessionReviewScreen";
+import { SpeedVarianceProbe } from "./scenarios/SpeedVarianceProbe";
 
 
 const STORAGE_KEY = "rh-config";
@@ -79,11 +80,17 @@ export function App() {
     [rh],
   );
 
+  const speedVarianceProbe = useMemo(
+    () => new SpeedVarianceProbe(rh, flightProbe, () => settingsRef.current),
+    [rh, flightProbe],
+  );
+
   const [sessionId, setSessionId] = useState<number | null>(null);
 
   const rhState = useService(rh);
   const elrsState = useService(elrs);
   const channelsState = useServiceThrottled(telemetry.channels);
+  const speedVarianceState = useService(speedVarianceProbe);
 
   const handleConfigChange = useCallback(
     (partial: Partial<RhConfig>) => rh.updateConfig(partial),
@@ -121,21 +128,23 @@ export function App() {
       crashTracker.startSession(sessionId);
       stickTracker.resumeSession(sessionId);
       lapTracker.startSession(sessionId);
+      speedVarianceProbe.startSession(sessionId);
       setSessionId(sessionId);
       setScreen("main");
     },
-    [rh, elrs, batteryTracker, crashTracker, stickTracker, lapTracker],
+    [rh, elrs, batteryTracker, crashTracker, stickTracker, lapTracker, speedVarianceProbe],
   );
 
   const handleStop = useCallback(async () => {
     crashTracker.endSession();
     lapTracker.endSession();
+    speedVarianceProbe.endSession();
     await stickTracker.endSession();
     await batteryTracker.endSession();
     setSessionId(null);
     telemetry.stop();
     setScreen("setup");
-  }, [telemetry, batteryTracker, crashTracker, stickTracker, lapTracker]);
+  }, [telemetry, batteryTracker, crashTracker, stickTracker, lapTracker, speedVarianceProbe]);
 
   const handleSettingsChange = useCallback(
     (partial: Partial<Settings>) =>
@@ -185,6 +194,8 @@ export function App() {
         armedProbe={armedProbe}
         flightProbe={flightProbe}
         sessionId={sessionId}
+        speedVarianceState={speedVarianceState}
+        consecutiveLapsToLevelUp={settings.consecutiveLapsToLevelUp}
         onStop={handleStop}
         onOpenSettings={() => setScreen("settings")}
         onOpenReview={() => setScreen("review")}

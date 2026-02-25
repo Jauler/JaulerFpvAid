@@ -1,11 +1,12 @@
 import { useMemo, useState } from "preact/hooks";
 import { useLiveQuery } from "../hooks/useLiveQuery";
-import { db, type Flight, type LapEvent, type CrashEvent } from "../db";
+import { db, type Flight, type LapEvent, type CrashEvent, type SvLevelEvent } from "../db";
 import { formatTime, formatDuration } from "../utils/format";
 import { FlightDetailScreen } from "./FlightDetailScreen";
 import { LapTimeChart } from "./LapTimeChart";
 import { LapTimeHistogram } from "./LapTimeHistogram";
 import { CrashTimingHistogram } from "./CrashTimingHistogram";
+import { SpeedLevelChart } from "./SpeedLevelChart";
 
 interface Props {
   sessionId: number;
@@ -79,6 +80,24 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
         crashes.push(...fc);
       }
       return crashes;
+    },
+    [sessionId],
+    [],
+  );
+
+  const svLevelEvents = useLiveQuery<SvLevelEvent[]>(
+    async () => {
+      const flightIds = await db.flights
+        .where("sessionId")
+        .equals(sessionId)
+        .primaryKeys();
+      if (flightIds.length === 0) return [];
+      const events: SvLevelEvent[] = [];
+      for (const fid of flightIds) {
+        const fe = await db.svLevelEvents.where("flightId").equals(fid).toArray();
+        events.push(...fe);
+      }
+      return events;
     },
     [sessionId],
     [],
@@ -249,6 +268,13 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
                 <article>
                   <header>Time Into Lap at First Crash</header>
                   <CrashTimingHistogram crashTimings={crashTimings} />
+                </article>
+              )}
+
+              {svLevelEvents.length > 0 && (
+                <article>
+                  <header>Speed Variance Level Progression</header>
+                  <SpeedLevelChart events={svLevelEvents} />
                 </article>
               )}
 

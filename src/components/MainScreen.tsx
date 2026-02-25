@@ -5,6 +5,7 @@ import type { ElrsState } from "../services/ElrsService";
 import type { TelemetryService } from "../services/TelemetryService";
 import type { ArmedProbe } from "../probes/ArmedProbe";
 import type { FlightProbe, FlightState } from "../probes/FlightProbe";
+import type { SpeedVarianceState } from "../scenarios/SpeedVarianceProbe";
 import { useService, useServiceThrottled } from "../hooks/useService";
 import { useLiveQuery } from "../hooks/useLiveQuery";
 import { db } from "../db";
@@ -12,6 +13,7 @@ import { StickOverlay } from "./StickOverlay";
 import { BatteryOverlay } from "./BatteryOverlay";
 import { DroneOverlay } from "./DroneOverlay";
 import { StatsOverlay } from "./StatsOverlay";
+import { SpeedVarianceOverlay } from "./SpeedVarianceOverlay";
 
 interface Props {
   rhState: RhState;
@@ -21,6 +23,8 @@ interface Props {
   armedProbe: ArmedProbe;
   flightProbe: FlightProbe;
   sessionId: number | null;
+  speedVarianceState: SpeedVarianceState;
+  consecutiveLapsToLevelUp: number;
   onStop: () => void;
   onOpenSettings: () => void;
   onOpenReview: () => void;
@@ -203,7 +207,7 @@ function FlightPhaseBar({ current, flightCount }: { current: FlightState; flight
   );
 }
 
-export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flightProbe, sessionId, onStop, onOpenSettings, onOpenReview }: Props) {
+export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flightProbe, sessionId, speedVarianceState, consecutiveLapsToLevelUp, onStop, onOpenSettings, onOpenReview }: Props) {
   const channelState = useServiceThrottled(telemetry.channels);
   const batteryState = useService(telemetry.battery);
   const armState = useService(armedProbe);
@@ -315,7 +319,11 @@ export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flig
         <FlightPhaseBar current={flightState} flightCount={flightCount} />
       </div>
 
-      <div style={{ marginTop: "auto", paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <SpeedVarianceOverlay state={speedVarianceState} consecutiveLapsToLevelUp={consecutiveLapsToLevelUp} />
+      </div>
+
+      <div style={{ paddingBottom: "1rem", position: "relative", display: "flex", justifyContent: "center" }}>
         <div style={{ position: "absolute", left: 0, bottom: "1rem", display: "flex", gap: "4px", alignItems: "stretch" }}>
           <DroneOverlay armState={armState} />
           <div class={batteryState.status !== "active" ? "stale-blink" : ""}>
