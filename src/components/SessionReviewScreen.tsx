@@ -107,8 +107,13 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
   const crashTimings = useMemo(() => {
     // For each flight, sort laps by timestamp, then for each lap find the
     // first crash between this lap's timestamp and the next lap's timestamp.
-    // Return seconds-into-lap for each such first crash.
+    // Return seconds-into-lap for each such first crash, capped to average lap time.
     const timings: number[] = [];
+
+    const realLaps = allLaps.filter((l) => l.lapNumber >= 1);
+    const avgLapSec = realLaps.length > 0
+      ? realLaps.reduce((s, l) => s + l.lapTime, 0) / realLaps.length / 1000
+      : Infinity;
 
     // Group laps and crashes by flightId
     const lapsByFlight = new Map<number, LapEvent[]>();
@@ -145,7 +150,8 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
           (c) => c.timestamp.getTime() >= lapStart && c.timestamp.getTime() < lapEnd,
         );
         if (firstCrash) {
-          timings.push((firstCrash.timestamp.getTime() - lapStart) / 1000);
+          const raw = (firstCrash.timestamp.getTime() - lapStart) / 1000;
+          timings.push(Math.min(raw, avgLapSec));
         }
       }
     }
@@ -156,9 +162,10 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
   const stats = useMemo(() => {
     const totalFlights = flights.length;
     const totalCrashes = flights.reduce((sum, f) => sum + f.crashCount, 0);
-    const crashRate = totalFlights > 0 ? (totalCrashes / totalFlights) * 100 : 0;
-    return { totalFlights, totalCrashes, crashRate };
-  }, [flights]);
+    const totalLaps = allLaps.filter((l) => l.lapNumber >= 1).length;
+    const crashRate = totalLaps > 0 ? (totalCrashes / totalLaps) * 100 : 0;
+    return { totalFlights, totalCrashes, totalLaps, crashRate };
+  }, [flights, allLaps]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>

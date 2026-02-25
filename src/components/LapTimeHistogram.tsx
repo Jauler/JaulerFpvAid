@@ -17,16 +17,21 @@ export function LapTimeHistogram({ laps }: Props) {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const times = laps
+    const allTimes = laps
       .filter((l) => l.lapNumber >= 1)
-      .map((l) => l.lapTime / 1000);
+      .map((l) => l.lapTime / 1000)
+      .sort((a, b) => a - b);
 
     if (chartRef.current) {
       chartRef.current.destroy();
       chartRef.current = null;
     }
 
-    if (times.length === 0) return;
+    if (allTimes.length === 0) return;
+
+    // Exclude slowest 25%
+    const cutoff = Math.ceil(allTimes.length * 0.75);
+    const times = allTimes.slice(0, cutoff);
 
     const min = Math.min(...times);
     const max = Math.max(...times);
