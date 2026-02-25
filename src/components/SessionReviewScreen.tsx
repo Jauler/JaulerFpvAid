@@ -7,6 +7,7 @@ import { LapTimeChart } from "./LapTimeChart";
 import { LapTimeHistogram } from "./LapTimeHistogram";
 import { CrashTimingHistogram } from "./CrashTimingHistogram";
 import { SpeedLevelChart } from "./SpeedLevelChart";
+import { CrashesPerLevelChart } from "./CrashesPerLevelChart";
 
 interface Props {
   sessionId: number;
@@ -275,6 +276,13 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
                 <article>
                   <header>Speed Variance Level Progression</header>
                   <SpeedLevelChart events={svLevelEvents} />
+                </article>
+              )}
+
+              {svLevelEvents.some((e) => e.trigger === "crash") && (
+                <article>
+                  <header>Crashes per Level</header>
+                  <CrashesPerLevelChart events={svLevelEvents} />
                 </article>
               )}
 

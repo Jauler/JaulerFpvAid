@@ -76,8 +76,8 @@ export function App() {
   );
 
   const lapTracker = useMemo(
-    () => new LapTracker(rh),
-    [rh],
+    () => new LapTracker(rh, flightProbe),
+    [rh, flightProbe],
   );
 
   const speedVarianceProbe = useMemo(

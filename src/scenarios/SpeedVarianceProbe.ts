@@ -43,6 +43,7 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
   private unsubLap: (() => void) | null = null;
   private unsubFlight: (() => void) | null = null;
   private sessionId: number | null = null;
+  private skipNextCrossing = true;
 
   constructor(
     private rh: RotorhazardService,
@@ -55,6 +56,7 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
   async startSession(sessionId: number): Promise<void> {
     this.sessionId = sessionId;
     this.lapTimes = [];
+    this.skipNextCrossing = true;
     const s = this.getSettings();
 
     // Load existing laps from DB for session resume
@@ -145,8 +147,11 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
   }
 
   private onLap(crossing: LapCrossing): void {
-    // Skip holeshots (lap 0)
-    if (crossing.lapNumber === 0) return;
+    // Skip first crossing after each off->* transition (holeshot equivalent)
+    if (this.skipNextCrossing) {
+      this.skipNextCrossing = false;
+      return;
+    }
 
     const lapTime = crossing.lapTime;
     this.lapTimes.push(lapTime);
@@ -195,7 +200,6 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
       consecutive += 1;
       playDing();
     } else {
-      consecutive = 0;
       speak(miss, s.ttsVoice, s.ttsRate);
     }
 
@@ -236,6 +240,15 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
     };
     const word = stateWords[fs];
     if (word) speak(word, s.ttsVoice, s.ttsRate);
+
+    if (fs === "off") {
+      this.skipNextCrossing = true;
+      return;
+    }
+
+    if (fs === "crashed") {
+      this.skipNextCrossing = true;
+    }
 
     if (fs !== "crashed") return;
     const cur = this.state;
