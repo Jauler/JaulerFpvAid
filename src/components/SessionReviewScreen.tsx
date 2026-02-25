@@ -1,8 +1,11 @@
 import { useMemo, useState } from "preact/hooks";
 import { useLiveQuery } from "../hooks/useLiveQuery";
-import { db, type Flight } from "../db";
+import { db, type Flight, type LapEvent, type CrashEvent } from "../db";
 import { formatTime, formatDuration } from "../utils/format";
 import { FlightDetailScreen } from "./FlightDetailScreen";
+import { LapTimeChart } from "./LapTimeChart";
+import { LapTimeHistogram } from "./LapTimeHistogram";
+import { CrashTimingHistogram } from "./CrashTimingHistogram";
 
 interface Props {
   sessionId: number;
@@ -44,6 +47,91 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
     [sessionId],
     [],
   );
+
+  const allLaps = useLiveQuery<LapEvent[]>(
+    async () => {
+      const flightIds = await db.flights
+        .where("sessionId")
+        .equals(sessionId)
+        .primaryKeys();
+      if (flightIds.length === 0) return [];
+      const laps: LapEvent[] = [];
+      for (const fid of flightIds) {
+        const fl = await db.lapEvents.where("flightId").equals(fid).toArray();
+        laps.push(...fl);
+      }
+      return laps;
+    },
+    [sessionId],
+    [],
+  );
+
+  const allCrashes = useLiveQuery<CrashEvent[]>(
+    async () => {
+      const flightIds = await db.flights
+        .where("sessionId")
+        .equals(sessionId)
+        .primaryKeys();
+      if (flightIds.length === 0) return [];
+      const crashes: CrashEvent[] = [];
+      for (const fid of flightIds) {
+        const fc = await db.crashEvents.where("flightId").equals(fid).toArray();
+        crashes.push(...fc);
+      }
+      return crashes;
+    },
+    [sessionId],
+    [],
+  );
+
+  const crashTimings = useMemo(() => {
+    // For each flight, sort laps by timestamp, then for each lap find the
+    // first crash between this lap's timestamp and the next lap's timestamp.
+    // Return seconds-into-lap for each such first crash.
+    const timings: number[] = [];
+
+    // Group laps and crashes by flightId
+    const lapsByFlight = new Map<number, LapEvent[]>();
+    for (const l of allLaps) {
+      if (l.flightId == null) continue;
+      const arr = lapsByFlight.get(l.flightId) ?? [];
+      arr.push(l);
+      lapsByFlight.set(l.flightId, arr);
+    }
+
+    const crashesByFlight = new Map<number, CrashEvent[]>();
+    for (const c of allCrashes) {
+      if (c.flightId == null) continue;
+      const arr = crashesByFlight.get(c.flightId) ?? [];
+      arr.push(c);
+      crashesByFlight.set(c.flightId, arr);
+    }
+
+    for (const [flightId, laps] of lapsByFlight) {
+      const crashes = crashesByFlight.get(flightId);
+      if (!crashes || crashes.length === 0) continue;
+
+      const sortedLaps = [...laps].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      const sortedCrashes = [...crashes].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+      for (let i = 0; i < sortedLaps.length; i++) {
+        const lapStart = sortedLaps[i].timestamp.getTime();
+        const lapEnd = i + 1 < sortedLaps.length
+          ? sortedLaps[i + 1].timestamp.getTime()
+          : Infinity;
+
+        // Find first crash in this lap window
+        const firstCrash = sortedCrashes.find(
+          (c) => c.timestamp.getTime() >= lapStart && c.timestamp.getTime() < lapEnd,
+        );
+        if (firstCrash) {
+          timings.push((firstCrash.timestamp.getTime() - lapStart) / 1000);
+        }
+      }
+    }
+
+    return timings;
+  }, [allLaps, allCrashes]);
 
   const stats = useMemo(() => {
     const totalFlights = flights.length;
@@ -143,6 +231,26 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
                   <small>Crash Rate</small>
                 </article>
               </div>
+
+              {allLaps.filter((l) => l.lapNumber >= 1).length > 0 && (
+                <div style={{ display: "flex", gap: "1rem" }}>
+                  <article style={{ flex: 1, minWidth: 0 }}>
+                    <header>Lap Times</header>
+                    <LapTimeChart laps={allLaps} />
+                  </article>
+                  <article style={{ flex: 1, minWidth: 0 }}>
+                    <header>Lap Time Distribution</header>
+                    <LapTimeHistogram laps={allLaps} />
+                  </article>
+                </div>
+              )}
+
+              {crashTimings.length > 0 && (
+                <article>
+                  <header>Time Into Lap at First Crash</header>
+                  <CrashTimingHistogram crashTimings={crashTimings} />
+                </article>
+              )}
 
               {flights.length > 0 && (
                 <div style={{ overflowX: "auto" }}>
