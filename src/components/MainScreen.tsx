@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import type { RhState } from "../services/RotorhazardService";
 import type { RotorhazardService } from "../services/RotorhazardService";
 import type { ElrsState } from "../services/ElrsService";
@@ -11,7 +11,7 @@ import { db } from "../db";
 import { StickOverlay } from "./StickOverlay";
 import { BatteryOverlay } from "./BatteryOverlay";
 import { DroneOverlay } from "./DroneOverlay";
-import { LapOverlay } from "./LapOverlay";
+import { StatsOverlay } from "./StatsOverlay";
 
 interface Props {
   rhState: RhState;
@@ -210,19 +210,14 @@ export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flig
   const flightState = useService(flightProbe);
 
   const [lapCount, setLapCount] = useState(0);
-  const prevArmRef = useRef(armState);
+  const [lapTimes, setLapTimes] = useState<number[]>([]);
 
   useEffect(() => {
-    const prev = prevArmRef.current;
-    prevArmRef.current = armState;
-    if (prev === "off" && armState !== "off") {
-      setLapCount(0);
-    }
-  }, [armState]);
-
-  useEffect(() => {
-    return rh.onLapCrossing(() => {
+    return rh.onLapCrossing((crossing) => {
       setLapCount((n) => n + 1);
+      if (crossing.lapNumber >= 1) {
+        setLapTimes((prev) => [...prev, crossing.lapTime]);
+      }
     });
   }, [rh]);
 
@@ -231,6 +226,23 @@ export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flig
       sessionId != null
         ? db.flights.where("sessionId").equals(sessionId).count()
         : Promise.resolve(0),
+    [sessionId],
+    0,
+  );
+
+  const crashCount = useLiveQuery(
+    async () => {
+      if (sessionId == null) return 0;
+      const flightIds = await db.flights
+        .where("sessionId")
+        .equals(sessionId)
+        .primaryKeys();
+      if (flightIds.length === 0) return 0;
+      return db.crashEvents
+        .where("flightId")
+        .anyOf(flightIds)
+        .count();
+    },
     [sessionId],
     0,
   );
@@ -301,7 +313,7 @@ export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flig
           </div>
         )}
         <div style={{ position: "absolute", right: 0, bottom: "1rem", display: "flex", alignItems: "stretch" }}>
-          <LapOverlay lap={lapCount} />
+          <StatsOverlay flights={flightCount} laps={lapCount} crashes={crashCount} lapTimes={lapTimes} />
         </div>
       </div>
     </div>
