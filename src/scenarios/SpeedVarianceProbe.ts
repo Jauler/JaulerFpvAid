@@ -253,7 +253,11 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
     if (fs !== "crashed") return;
     const cur = this.state;
     if (cur.phase !== "active") return;
-    if (cur.targetLevel <= -2) return;
+
+    if (cur.targetLevel <= -2) {
+      this.setState({ ...cur, consecutiveOnTarget: 0 });
+      return;
+    }
 
     const newLevel = (cur.targetLevel - 1) as SpeedLevel;
     this.setState({
