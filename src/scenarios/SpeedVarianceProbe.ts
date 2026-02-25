@@ -192,9 +192,13 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
     let consecutive = cur.consecutiveOnTarget;
 
     // Check if lap fits current target range
-    if (this.lapFitsCurrentTarget(lapTime, avg, level)) {
+    const miss = this.lapMissDirection(lapTime, avg, level);
+    if (miss === null) {
       consecutive += 1;
       playDing();
+    } else {
+      consecutive = 0;
+      speak(miss, s.ttsVoice, s.ttsRate);
     }
 
     // Level up check
@@ -281,6 +285,35 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
       levelMinus1: avg * (1 + s.svOuterSlowPct / 100),
       levelMinus2: avg * (1 + s.svOuterSlowPct / 100),
     };
+  }
+
+  /** Returns null if on-target, "too fast" or "too slow" otherwise. */
+  private lapMissDirection(lapTime: number, avg: number, level: SpeedLevel): string | null {
+    const s = this.getSettings();
+    const innerFastBound = avg * (1 - s.svInnerFastPct / 100);
+    const innerSlowBound = avg * (1 + s.svInnerSlowPct / 100);
+    const outerFastBound = avg * (1 - s.svOuterFastPct / 100);
+    const outerSlowBound = avg * (1 + s.svOuterSlowPct / 100);
+
+    let low: number;
+    let high: number;
+    switch (level) {
+      case 2:
+        // Only upper bound: anything below outerFastBound is on-target
+        return lapTime < outerFastBound ? null : "too slow";
+      case 1:
+        low = outerFastBound; high = innerFastBound; break;
+      case 0:
+        low = innerFastBound; high = innerSlowBound; break;
+      case -1:
+        low = innerSlowBound; high = outerSlowBound; break;
+      case -2:
+        // Only lower bound: anything above outerSlowBound is on-target
+        return lapTime > outerSlowBound ? null : "too fast";
+    }
+    if (lapTime < low) return "too fast";
+    if (lapTime > high) return "too slow";
+    return null;
   }
 
   private lapFitsCurrentTarget(lapTime: number, avg: number, level: SpeedLevel): boolean {
