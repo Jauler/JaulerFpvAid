@@ -15,6 +15,7 @@ export interface Settings {
   svInnerSlowPct: number;
   svOuterFastPct: number;
   svOuterSlowPct: number;
+  svBaselinePct: number;
   ttsVoice: string;
   ttsRate: number;
 }
@@ -38,6 +39,7 @@ const defaults: Settings = {
   svInnerSlowPct: 10,
   svOuterFastPct: 30,
   svOuterSlowPct: 30,
+  svBaselinePct: 5,
   ttsVoice: "",
   ttsRate: 1.0,
 };

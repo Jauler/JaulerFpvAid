@@ -76,9 +76,7 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
     }
 
     const completed = this.lapTimes.length;
-    const avg = completed > 0
-      ? this.lapTimes.reduce((a, b) => a + b, 0) / completed
-      : 0;
+    const avg = this.computeBaseline();
     const lastLap = completed > 0 ? this.lapTimes[completed - 1] : null;
 
     if (completed >= s.warmupLaps) {
@@ -152,7 +150,7 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
 
     const lapTime = crossing.lapTime;
     this.lapTimes.push(lapTime);
-    const avg = this.lapTimes.reduce((a, b) => a + b, 0) / this.lapTimes.length;
+    const avg = this.computeBaseline();
 
     const cur = this.state;
 
@@ -296,6 +294,15 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
       case -2:
         return `slower than ${fmt(outerSlow)}`;
     }
+  }
+
+  private computeBaseline(): number {
+    if (this.lapTimes.length === 0) return 0;
+    const sorted = [...this.lapTimes].sort((a, b) => a - b);
+    const pct = this.getSettings().svBaselinePct;
+    const count = Math.max(1, Math.ceil(sorted.length * pct / 100));
+    const fastest = sorted.slice(0, count);
+    return fastest.reduce((a, b) => a + b, 0) / fastest.length;
   }
 
   computeTargetLapTimes(avg: number): TargetLapTimes {

@@ -361,6 +361,21 @@ export function SettingsScreen({
             />
           </label>
         </div>
+        <label>
+          Baseline fastest laps (%)
+          <input
+            key={settings.svBaselinePct}
+            type="number"
+            min={1}
+            max={100}
+            step={1}
+            defaultValue={settings.svBaselinePct}
+            onBlur={(e) => {
+              const v = Number((e.target as HTMLInputElement).value);
+              if (!Number.isNaN(v)) onSettingChange({ svBaselinePct: v });
+            }}
+          />
+        </label>
       </article>
 
       <button class="secondary" style={{ marginBottom: "2rem" }} onClick={onBack}>
