@@ -204,7 +204,7 @@ export function SettingsScreen({
         onRangeMaxChange={(v) => onSettingChange({ turtleRangeMax: v })}
       />
 
-      <button class="secondary" onClick={onBack}>
+      <button class="secondary" style={{ marginBottom: "2rem" }} onClick={onBack}>
         Back
       </button>
     </main>
