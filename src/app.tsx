@@ -13,7 +13,7 @@ import { MainScreen } from "./components/MainScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { SessionList } from "./components/SessionList";
 import { SessionReviewScreen } from "./components/SessionReviewScreen";
-import { FlightDetailScreen } from "./components/FlightDetailScreen";
+
 
 const STORAGE_KEY = "rh-config";
 
@@ -39,7 +39,7 @@ export function App() {
   }, []);
   const elrs = useMemo(() => new ElrsService(), []);
   const telemetry = useMemo(() => new TelemetryService(), []);
-  const [screen, setScreen] = useState<"setup" | "main" | "settings" | "review" | "flight-detail">("setup");
+  const [screen, setScreen] = useState<"setup" | "main" | "settings" | "review">("setup");
   const [settings, setSettings] = useState(() => {
     const initial = loadSettings();
     applyTheme(initial.theme);
@@ -74,7 +74,6 @@ export function App() {
   );
 
   const [sessionId, setSessionId] = useState<number | null>(null);
-  const [reviewFlightId, setReviewFlightId] = useState<number | null>(null);
 
   const rhState = useService(rh);
   const elrsState = useService(elrs);
@@ -141,28 +140,11 @@ export function App() {
     [],
   );
 
-  if (screen === "flight-detail" && reviewFlightId != null) {
-    return (
-      <FlightDetailScreen
-        key={reviewFlightId}
-        flightId={reviewFlightId}
-        onBack={() => {
-          setReviewFlightId(null);
-          setScreen("review");
-        }}
-      />
-    );
-  }
-
   if (screen === "review" && sessionId != null) {
     return (
       <SessionReviewScreen
         sessionId={sessionId}
         onBack={() => setScreen("main")}
-        onSelectFlight={(flightId) => {
-          setReviewFlightId(flightId);
-          setScreen("flight-detail");
-        }}
       />
     );
   }

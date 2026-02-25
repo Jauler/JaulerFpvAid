@@ -6,7 +6,7 @@ import { formatTime, formatDuration } from "../utils/format";
 
 interface Props {
   flightId: number;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export function FlightDetailScreen({ flightId, onBack }: Props) {
@@ -47,20 +47,22 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
 
   return (
     <div class="container" style={{ maxWidth: "75vw" }}>
-      <nav>
-        <ul>
-          <li>
-            <strong>Flight Detail</strong>
-          </li>
-        </ul>
-        <ul>
-          <li>
-            <button class="outline" onClick={onBack}>
-              Back
-            </button>
-          </li>
-        </ul>
-      </nav>
+      {onBack && (
+        <nav>
+          <ul>
+            <li>
+              <strong>Flight Detail</strong>
+            </li>
+          </ul>
+          <ul>
+            <li>
+              <button class="outline" onClick={onBack}>
+                Back
+              </button>
+            </li>
+          </ul>
+        </nav>
+      )}
 
       <div class="grid">
         <article>
