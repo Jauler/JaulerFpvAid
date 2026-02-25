@@ -209,17 +209,32 @@ export function MainScreen({ rhState, rh, elrsState, telemetry, armedProbe, flig
   const armState = useService(armedProbe);
   const flightState = useService(flightProbe);
 
-  const [lapCount, setLapCount] = useState(0);
   const [lapTimes, setLapTimes] = useState<number[]>([]);
 
   useEffect(() => {
     return rh.onLapCrossing((crossing) => {
-      setLapCount((n) => n + 1);
       if (crossing.lapNumber >= 1) {
         setLapTimes((prev) => [...prev, crossing.lapTime]);
       }
     });
   }, [rh]);
+
+  const lapCount = useLiveQuery(
+    async () => {
+      if (sessionId == null) return 0;
+      const flightIds = await db.flights
+        .where("sessionId")
+        .equals(sessionId)
+        .primaryKeys();
+      if (flightIds.length === 0) return 0;
+      return db.lapEvents
+        .where("flightId")
+        .anyOf(flightIds)
+        .count();
+    },
+    [sessionId],
+    0,
+  );
 
   const flightCount = useLiveQuery(
     () =>
