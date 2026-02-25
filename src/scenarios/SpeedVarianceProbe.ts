@@ -147,6 +147,18 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
     this.setState({ ...INITIAL_STATE });
   }
 
+  recalculate(): void {
+    const cur = this.state;
+    if (cur.phase !== "warmup" && cur.phase !== "active") return;
+    const avg = this.computeBaseline();
+    const targets = cur.phase === "active" ? this.computeTargetLapTimes(avg) : null;
+    this.setState({
+      ...cur,
+      runningAverage: avg,
+      targetLapTimes: targets,
+    });
+  }
+
   forceLevel(level: SpeedLevel): void {
     const cur = this.state;
     if (cur.phase !== "active") return;

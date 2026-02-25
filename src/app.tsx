@@ -152,9 +152,10 @@ export function App() {
         const next = { ...prev, ...partial };
         saveSettings(next);
         applyTheme(next.theme);
+        speedVarianceProbe.recalculate();
         return next;
       }),
-    [],
+    [speedVarianceProbe],
   );
 
   if (screen === "review" && sessionId != null) {
