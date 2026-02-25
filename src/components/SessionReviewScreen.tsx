@@ -53,8 +53,8 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
   }, [flights]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      <nav class="container" style={{ maxWidth: "none", marginBottom: 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+      <nav style={{ padding: "0 1rem", marginBottom: 0 }}>
         <ul>
           <li>
             <strong>Session Review</strong>
@@ -77,7 +77,7 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
             flexShrink: 0,
             borderRight: "1px solid var(--pico-muted-border-color)",
             overflowY: "auto",
-            padding: "0.5rem 0",
+            padding: "0.5rem 0.5rem",
           }}
         >
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
