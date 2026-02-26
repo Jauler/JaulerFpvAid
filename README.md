@@ -27,6 +27,17 @@ A real-time FPV drone racing training aid. Connects to your drone's ELRS receive
 - An ExpressLRS receiver connected via USB/serial
 - A [RotorHazard](https://github.com/RotorHazard/RotorHazard) timing system (optional, for lap timing)
 
+## Connecting to RotorHazard
+
+If your RotorHazard server runs on plain HTTP (no TLS), the browser will block the connection because the app is served over HTTPS. To allow it:
+
+1. Click the lock/tune icon in the address bar
+2. Go to **Site settings**
+3. Find **Insecure content** and set it to **Allow**
+4. Reload the page
+
+This lets the app make non-encrypted connections to your local RotorHazard server.
+
 ## Development
 
 ```bash
