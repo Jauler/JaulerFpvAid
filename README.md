@@ -4,6 +4,12 @@ A real-time FPV drone racing training aid. Connects to your drone's ELRS receive
 
 **[Try it live](https://aid.jauler.eu)**
 
+## Requirements
+
+- A browser with [Web Serial API](https://caniuse.com/web-serial) support (Chrome, Edge, Opera)
+- An ExpressLRS receiver flashed with [ExpressLRS-sniffer](https://github.com/Jauler/ExpressLRS-sniffer) firmware, connected via USB/serial
+- A [RotorHazard](https://github.com/RotorHazard/RotorHazard) timing system (optional, for lap timing)
+
 ## Features
 
 - **ELRS telemetry via Web Serial** — connect directly to an ExpressLRS receiver at 420k baud for real-time CRSF data (battery, attitude, GPS, link stats, stick inputs, flight mode, and more)
@@ -31,12 +37,6 @@ This lets the app make non-encrypted connections to your local RotorHazard serve
 ## Tech Stack
 
 [Vite](https://vite.dev/) + [Preact](https://preactjs.com/) + TypeScript, styled with [Pico CSS](https://picocss.com/). Data stored client-side via [Dexie](https://dexie.org/) (IndexedDB). Charts rendered with [Chart.js](https://www.chartjs.org/).
-
-## Requirements
-
-- A browser with [Web Serial API](https://caniuse.com/web-serial) support (Chrome, Edge, Opera)
-- An ExpressLRS receiver flashed with [ExpressLRS-sniffer](https://github.com/Jauler/ExpressLRS-sniffer) firmware, connected via USB/serial
-- A [RotorHazard](https://github.com/RotorHazard/RotorHazard) timing system (optional, for lap timing)
 
 ## Development
 
