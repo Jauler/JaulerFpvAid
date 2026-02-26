@@ -1,7 +1,8 @@
 import { useLiveQuery } from "../hooks/useLiveQuery";
-import { db, type Flight, type BatterySample, type CrashEvent, type StickSample, type LapEvent } from "../db";
+import { db, type Flight, type BatterySample, type CrashEvent, type StickSample, type LapEvent, type SvLevelEvent } from "../db";
 import { BatteryChart } from "./BatteryChart";
 import { StickHeatmap } from "./StickHeatmap";
+import { FlightTimelineChart } from "./FlightTimelineChart";
 import { formatTime, formatDuration } from "../utils/format";
 
 interface Props {
@@ -36,6 +37,12 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
 
   const crashEvents = useLiveQuery<CrashEvent[]>(
     () => db.crashEvents.where("flightId").equals(flightId).toArray(),
+    [flightId],
+    [],
+  );
+
+  const svLevelEvents = useLiveQuery<SvLevelEvent[]>(
+    () => db.svLevelEvents.where("flightId").equals(flightId).toArray(),
     [flightId],
     [],
   );
@@ -87,6 +94,19 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
           <small>Crashes</small>
         </article>
       </div>
+
+      {stickSamples.length > 0 && (
+        <article>
+          <header>Flight Timeline</header>
+          <FlightTimelineChart
+            flightStart={flight.startedAt}
+            stickSamples={stickSamples}
+            lapEvents={lapEvents}
+            crashEvents={crashEvents}
+            svLevelEvents={svLevelEvents}
+          />
+        </article>
+      )}
 
       {(batterySamples.length > 0 || stickSamples.length > 0) && (
         <div style={{ display: "flex", gap: "1rem", alignItems: "stretch" }}>
