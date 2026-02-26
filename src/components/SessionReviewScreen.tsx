@@ -272,24 +272,27 @@ export function SessionReviewScreen({ sessionId, onBack }: Props) {
                 </div>
               )}
 
-              {crashTimings.length > 0 && (
-                <article>
-                  <header>Time Into Lap at First Crash</header>
-                  <CrashTimingHistogram crashTimings={crashTimings} />
-                </article>
+              {(svLevelEvents.some((e) => e.trigger === "crash") || crashTimings.length > 0) && (
+                <div style={{ display: "flex", gap: "1rem" }}>
+                  {svLevelEvents.some((e) => e.trigger === "crash") && (
+                    <article style={{ flex: 1, minWidth: 0 }}>
+                      <header>Crash Probability per Level</header>
+                      <CrashesPerLevelChart events={svLevelEvents} laps={allLaps} />
+                    </article>
+                  )}
+                  {crashTimings.length > 0 && (
+                    <article style={{ flex: 1, minWidth: 0 }}>
+                      <header>Time Into Lap at First Crash</header>
+                      <CrashTimingHistogram crashTimings={crashTimings} />
+                    </article>
+                  )}
+                </div>
               )}
 
               {svLevelEvents.length > 0 && (
                 <article>
                   <header>Speed Variance Level Progression</header>
                   <SpeedLevelChart events={svLevelEvents} />
-                </article>
-              )}
-
-              {svLevelEvents.some((e) => e.trigger === "crash") && (
-                <article>
-                  <header>Crashes per Level</header>
-                  <CrashesPerLevelChart events={svLevelEvents} />
                 </article>
               )}
 
