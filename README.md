@@ -35,7 +35,7 @@ This lets the app make non-encrypted connections to your local RotorHazard serve
 ## Requirements
 
 - A browser with [Web Serial API](https://caniuse.com/web-serial) support (Chrome, Edge, Opera)
-- An ExpressLRS receiver connected via USB/serial
+- An ExpressLRS receiver flashed with [ExpressLRS-sniffer](https://github.com/Jauler/ExpressLRS-sniffer) firmware, connected via USB/serial
 - A [RotorHazard](https://github.com/RotorHazard/RotorHazard) timing system (optional, for lap timing)
 
 ## Development
