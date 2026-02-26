@@ -47,12 +47,13 @@ export function SessionList({ onStart }: Props) {
       .equals(session.id!)
       .primaryKeys();
 
-    await db.transaction("rw", [db.sessions, db.flights, db.batterySamples, db.stickSamples, db.crashEvents, db.lapEvents, db.svLevelEvents], async () => {
+    await db.transaction("rw", [db.sessions, db.flights, db.batterySamples, db.stickSamples, db.crashEvents, db.lapEvents, db.holeshotEvents, db.svLevelEvents], async () => {
       for (const fid of flightIds) {
         await db.batterySamples.where("flightId").equals(fid).delete();
         await db.stickSamples.where("flightId").equals(fid).delete();
         await db.crashEvents.where("flightId").equals(fid).delete();
         await db.lapEvents.where("flightId").equals(fid).delete();
+        await db.holeshotEvents.where("flightId").equals(fid).delete();
         await db.svLevelEvents.where("flightId").equals(fid).delete();
       }
       await db.flights.where("sessionId").equals(session.id!).delete();
@@ -67,12 +68,13 @@ export function SessionList({ onStart }: Props) {
       .toArray();
     const flightIds = flights.map((f) => f.id!);
 
-    const [batterySamples, stickSamples, crashEvents, lapEvents, svLevelEvents] =
+    const [batterySamples, stickSamples, crashEvents, lapEvents, holeshotEvents, svLevelEvents] =
       await Promise.all([
         db.batterySamples.where("flightId").anyOf(flightIds).toArray(),
         db.stickSamples.where("flightId").anyOf(flightIds).toArray(),
         db.crashEvents.where("flightId").anyOf(flightIds).toArray(),
         db.lapEvents.where("flightId").anyOf(flightIds).toArray(),
+        db.holeshotEvents.where("flightId").anyOf(flightIds).toArray(),
         db.svLevelEvents.where("flightId").anyOf(flightIds).toArray(),
       ]);
 
@@ -94,6 +96,10 @@ export function SessionList({ onStart }: Props) {
         flightIndex: flights.findIndex((f) => f.id === flightId),
       })),
       lapEvents: lapEvents.map(({ id: _, flightId, ...e }) => ({
+        ...e,
+        flightIndex: flights.findIndex((f) => f.id === flightId),
+      })),
+      holeshotEvents: holeshotEvents.map(({ id: _, flightId, ...e }) => ({
         ...e,
         flightIndex: flights.findIndex((f) => f.id === flightId),
       })),
@@ -123,7 +129,7 @@ export function SessionList({ onStart }: Props) {
         return;
       }
 
-      await db.transaction("rw", [db.sessions, db.flights, db.batterySamples, db.stickSamples, db.crashEvents, db.lapEvents, db.svLevelEvents], async () => {
+      await db.transaction("rw", [db.sessions, db.flights, db.batterySamples, db.stickSamples, db.crashEvents, db.lapEvents, db.holeshotEvents, db.svLevelEvents], async () => {
         const sessionId = (await db.sessions.add({
           name: data.session.name,
           startedAt: new Date(data.session.startedAt),
@@ -169,6 +175,13 @@ export function SessionList({ onStart }: Props) {
             timestamp: new Date(e.timestamp),
             lapNumber: e.lapNumber,
             lapTime: e.lapTime,
+          });
+        }
+
+        for (const e of data.holeshotEvents ?? []) {
+          await db.holeshotEvents.add({
+            flightId: flightIdMap[e.flightIndex],
+            timestamp: new Date(e.timestamp),
           });
         }
 

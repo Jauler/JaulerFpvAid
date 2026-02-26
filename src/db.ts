@@ -42,6 +42,12 @@ export interface LapEvent {
   lapTime: number;
 }
 
+export interface HoleshotEvent {
+  id?: number;
+  flightId: number;
+  timestamp: Date;
+}
+
 export interface SvLevelEvent {
   id?: number;
   flightId: number;
@@ -59,6 +65,7 @@ class AppDatabase extends Dexie {
   stickSamples!: Table<StickSample>;
   crashEvents!: Table<CrashEvent>;
   lapEvents!: Table<LapEvent>;
+  holeshotEvents!: Table<HoleshotEvent>;
   svLevelEvents!: Table<SvLevelEvent>;
 
   constructor() {
@@ -101,6 +108,16 @@ class AppDatabase extends Dexie {
       stickSamples: "++id, flightId",
       crashEvents: "++id, flightId",
       lapEvents: "++id, flightId",
+      svLevelEvents: "++id, flightId",
+    });
+    this.version(7).stores({
+      sessions: "++id",
+      flights: "++id, sessionId",
+      batterySamples: "++id, flightId",
+      stickSamples: "++id, flightId",
+      crashEvents: "++id, flightId",
+      lapEvents: "++id, flightId",
+      holeshotEvents: "++id, flightId",
       svLevelEvents: "++id, flightId",
     });
   }

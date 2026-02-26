@@ -9,7 +9,7 @@ import {
   Filler,
   Tooltip,
 } from "chart.js";
-import type { StickSample, LapEvent, CrashEvent, SvLevelEvent } from "../db";
+import type { StickSample, LapEvent, HoleshotEvent, CrashEvent, SvLevelEvent } from "../db";
 
 Chart.register(CategoryScale, LineController, LineElement, PointElement, LinearScale, Filler, Tooltip);
 
@@ -17,6 +17,7 @@ interface Props {
   flightStart: Date;
   stickSamples: StickSample[];
   lapEvents: LapEvent[];
+  holeshotEvents: HoleshotEvent[];
   crashEvents: CrashEvent[];
   svLevelEvents: SvLevelEvent[];
 }
@@ -38,7 +39,7 @@ interface EventMarker {
   dashed?: boolean;
 }
 
-export function FlightTimelineChart({ flightStart, stickSamples, lapEvents, crashEvents, svLevelEvents }: Props) {
+export function FlightTimelineChart({ flightStart, stickSamples, lapEvents, holeshotEvents, crashEvents, svLevelEvents }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
 
@@ -66,11 +67,14 @@ export function FlightTimelineChart({ flightStart, stickSamples, lapEvents, cras
     // Build event markers
     const markers: EventMarker[] = [];
 
+    for (const h of holeshotEvents) {
+      const t = (h.timestamp.getTime() - startMs) / 1000;
+      markers.push({ t, label: "Holeshot", color: "rgba(255, 206, 86, 0.9)", position: "top", dashed: true });
+    }
+
     for (const lap of lapEvents) {
       const t = (lap.timestamp.getTime() - startMs) / 1000;
-      const label = lap.lapNumber === 0 ? "Holeshot" : `Lap ${lap.lapNumber}`;
-      const color = lap.lapNumber === 0 ? "rgba(255, 206, 86, 0.9)" : "rgba(75, 192, 192, 0.9)";
-      markers.push({ t, label, color, position: "top", dashed: lap.lapNumber === 0 });
+      markers.push({ t, label: `Lap ${lap.lapNumber}`, color: "rgba(75, 192, 192, 0.9)", position: "top" });
     }
 
     for (const crash of crashEvents) {
@@ -189,7 +193,7 @@ export function FlightTimelineChart({ flightStart, stickSamples, lapEvents, cras
       chartRef.current?.destroy();
       chartRef.current = null;
     };
-  }, [flightStart, stickSamples, lapEvents, crashEvents, svLevelEvents]);
+  }, [flightStart, stickSamples, lapEvents, holeshotEvents, crashEvents, svLevelEvents]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "300px" }}>

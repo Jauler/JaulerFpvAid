@@ -38,6 +38,7 @@ export class LapTracker {
 
     if (this.skipNextCrossing) {
       this.skipNextCrossing = false;
+      this.recordHoleshot();
       return;
     }
 
@@ -52,6 +53,22 @@ export class LapTracker {
         timestamp: new Date(),
         lapNumber: crossing.lapNumber,
         lapTime: crossing.lapTime,
+      });
+    }
+  }
+
+  private async recordHoleshot(): Promise<void> {
+    if (this.sessionId == null) return;
+
+    const lastFlight = await db.flights
+      .where("sessionId")
+      .equals(this.sessionId)
+      .last();
+
+    if (lastFlight?.id != null) {
+      await db.holeshotEvents.add({
+        flightId: lastFlight.id,
+        timestamp: new Date(),
       });
     }
   }

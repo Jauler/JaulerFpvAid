@@ -1,5 +1,5 @@
 import { useLiveQuery } from "../hooks/useLiveQuery";
-import { db, type Flight, type BatterySample, type CrashEvent, type StickSample, type LapEvent, type SvLevelEvent } from "../db";
+import { db, type Flight, type BatterySample, type CrashEvent, type StickSample, type LapEvent, type HoleshotEvent, type SvLevelEvent } from "../db";
 import { BatteryChart } from "./BatteryChart";
 import { StickHeatmap } from "./StickHeatmap";
 import { FlightTimelineChart } from "./FlightTimelineChart";
@@ -37,6 +37,12 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
 
   const crashEvents = useLiveQuery<CrashEvent[]>(
     () => db.crashEvents.where("flightId").equals(flightId).toArray(),
+    [flightId],
+    [],
+  );
+
+  const holeshotEvents = useLiveQuery<HoleshotEvent[]>(
+    () => db.holeshotEvents.where("flightId").equals(flightId).toArray(),
     [flightId],
     [],
   );
@@ -102,6 +108,7 @@ export function FlightDetailScreen({ flightId, onBack }: Props) {
             flightStart={flight.startedAt}
             stickSamples={stickSamples}
             lapEvents={lapEvents}
+            holeshotEvents={holeshotEvents}
             crashEvents={crashEvents}
             svLevelEvents={svLevelEvents}
           />
