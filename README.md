@@ -17,16 +17,6 @@ A real-time FPV drone racing training aid. Connects to your drone's ELRS receive
 - **Audio feedback** — TTS announcements for flight state changes and level targets, audio cues for on-target laps
 - **PWA** — installable, works offline after first load
 
-## Tech Stack
-
-[Vite](https://vite.dev/) + [Preact](https://preactjs.com/) + TypeScript, styled with [Pico CSS](https://picocss.com/). Data stored client-side via [Dexie](https://dexie.org/) (IndexedDB). Charts rendered with [Chart.js](https://www.chartjs.org/).
-
-## Requirements
-
-- A browser with [Web Serial API](https://caniuse.com/web-serial) support (Chrome, Edge, Opera)
-- An ExpressLRS receiver connected via USB/serial
-- A [RotorHazard](https://github.com/RotorHazard/RotorHazard) timing system (optional, for lap timing)
-
 ## Connecting to RotorHazard
 
 If your RotorHazard server runs on plain HTTP (no TLS), the browser will block the connection because the app is served over HTTPS. To allow it:
@@ -37,6 +27,16 @@ If your RotorHazard server runs on plain HTTP (no TLS), the browser will block t
 4. Reload the page
 
 This lets the app make non-encrypted connections to your local RotorHazard server.
+
+## Tech Stack
+
+[Vite](https://vite.dev/) + [Preact](https://preactjs.com/) + TypeScript, styled with [Pico CSS](https://picocss.com/). Data stored client-side via [Dexie](https://dexie.org/) (IndexedDB). Charts rendered with [Chart.js](https://www.chartjs.org/).
+
+## Requirements
+
+- A browser with [Web Serial API](https://caniuse.com/web-serial) support (Chrome, Edge, Opera)
+- An ExpressLRS receiver connected via USB/serial
+- A [RotorHazard](https://github.com/RotorHazard/RotorHazard) timing system (optional, for lap timing)
 
 ## Development
 
