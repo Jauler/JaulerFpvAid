@@ -39,30 +39,32 @@ function renderHeatmap(
 
   // Build histogram: BINS x BINS grid over the stick area
   const hist = new Uint32Array(BINS * BINS);
-  let maxCount = 0;
-
   for (let i = 0; i < xValues.length; i++) {
     const tx = (xValues[i] - RANGE_MIN) / (RANGE_MAX - RANGE_MIN);
     const ty = (yValues[i] - RANGE_MIN) / (RANGE_MAX - RANGE_MIN);
     const bx = Math.min(BINS - 1, Math.max(0, Math.floor(tx * BINS)));
     const by = Math.min(BINS - 1, Math.max(0, Math.floor((1 - ty) * BINS))); // invert Y
-    const idx = by * BINS + bx;
-    hist[idx]++;
-    if (hist[idx] > maxCount) maxCount = hist[idx];
+    hist[by * BINS + bx]++;
   }
+
+  // Percentile clamp: use 95th percentile as max to avoid neutral position overwhelming the scale
+  const nonZero = Array.from(hist).filter((c) => c > 0).sort((a, b) => a - b);
+  const clampMax = nonZero.length > 0
+    ? nonZero[Math.min(nonZero.length - 1, Math.floor(nonZero.length * 0.95))]
+    : 1;
 
   // Clear canvas
   ctx.clearRect(0, 0, SIZE, SIZE);
 
   // Draw filled cells
-  if (maxCount > 0) {
+  if (clampMax > 0) {
     const cellW = inner / BINS;
     const cellH = inner / BINS;
     for (let row = 0; row < BINS; row++) {
       for (let col = 0; col < BINS; col++) {
         const count = hist[row * BINS + col];
         if (count === 0) continue;
-        const norm = count / maxCount;
+        const norm = Math.min(1, count / clampMax);
         ctx.fillStyle = colorForNorm(norm);
         ctx.fillRect(PAD + col * cellW, PAD + row * cellH, cellW, cellH);
       }
