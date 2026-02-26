@@ -8,7 +8,7 @@ interface Props {
   laps: LapEvent[];
 }
 
-const BIN_COUNT = 15;
+const BIN_COUNT = 8;
 
 export function LapTimeHistogram({ laps }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
