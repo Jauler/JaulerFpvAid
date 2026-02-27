@@ -281,6 +281,29 @@ export class SpeedVarianceProbe extends Subscribable<SpeedVarianceState> {
 
     if (fs !== "crashed") return;
     const cur = this.state;
+
+    if (cur.phase === "warmup") {
+      const completed = cur.warmupLapsCompleted + 1;
+      if (completed >= cur.warmupLapsRequired) {
+        const avg = this.computeBaseline();
+        const targets = this.computeTargetLapTimes(avg);
+        this.setState({
+          ...cur,
+          phase: "active",
+          warmupLapsCompleted: completed,
+          runningAverage: avg,
+          targetLevel: 0,
+          targetLapTimes: targets,
+          consecutiveOnTarget: 0,
+        });
+        this.recordLevelEvent("lap", 0, avg, null);
+        announceLevel(0, s.ttsVoice, s.ttsRate, this.describeRange(0, avg));
+      } else {
+        this.setState({ ...cur, warmupLapsCompleted: completed });
+      }
+      return;
+    }
+
     if (cur.phase !== "active") return;
 
     if (cur.targetLevel <= -2) {
